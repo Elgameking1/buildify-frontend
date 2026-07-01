@@ -13,6 +13,7 @@ const navigationLinks = [
 const accountLinks = [
   { label: 'Cart', to: '/cart', icon: FiShoppingCart },
   { label: 'Vendor', to: '/vendor-dashboard' },
+  { label: 'Worker', to: '/worker-dashboard' },
   { label: 'Login', to: '/login', icon: FiUser },
   { label: 'Register', to: '/register' },
 ]

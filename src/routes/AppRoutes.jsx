@@ -13,6 +13,7 @@ import Materials from '../pages/Materials'
 import Profile from '../pages/Profile'
 import Register from '../pages/Register'
 import VendorDashboard from '../pages/VendorDashboard'
+import WorkerDashboard from '../pages/WorkerDashboard'
 import WorkerDetails from '../pages/WorkerDetails'
 import Workers from '../pages/Workers'
 
@@ -43,6 +44,7 @@ function AppRoutes() {
           <Route path="register" element={<Register />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="vendor-dashboard" element={<VendorDashboard />} />
+          <Route path="worker-dashboard" element={<WorkerDashboard />} />
           <Route path="profile" element={<Profile />} />
           <Route path="about" element={<About />} />
           <Route path="contact" element={<Contact />} />
