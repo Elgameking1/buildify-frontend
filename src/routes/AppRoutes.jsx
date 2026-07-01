@@ -9,7 +9,9 @@ function AppRoutes() {
           <Route
             index
             element={
-              <h1 className="text-3xl font-semibold">Online Marketplace</h1>
+              <h1 className="text-3xl font-semibold text-secondary">
+                Online Marketplace
+              </h1>
             }
           />
         </Route>

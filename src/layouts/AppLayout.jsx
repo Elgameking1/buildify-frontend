@@ -4,7 +4,7 @@ import { Toaster } from 'react-hot-toast'
 function AppLayout() {
   return (
     <>
-      <main className="grid min-h-screen place-items-center bg-white px-4 text-neutral-950">
+      <main className="app-shell grid place-items-center px-4">
         <Outlet />
       </main>
       <Toaster position="top-right" />
