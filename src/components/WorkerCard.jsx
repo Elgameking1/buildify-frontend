@@ -40,7 +40,7 @@ function WorkerCard({ worker }) {
           <span className="font-black text-secondary">{worker.rate}</span>
         ) : null}
         <Link to={`/workers/${worker.id}`} className="btn-accent">
-        View Profile
+          View Profile
         </Link>
       </div>
     </article>
