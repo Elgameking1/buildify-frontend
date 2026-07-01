@@ -82,6 +82,14 @@
     @apply rounded-panel border border-concrete bg-surface shadow-construction;
   }
 
+  .nav-link {
+    @apply inline-flex items-center gap-2 rounded-control px-3 py-2 text-sm font-semibold text-secondary transition-colors duration-200 hover:bg-primary-50 hover:text-secondary-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  }
+
+  .mobile-nav-link {
+    @apply flex items-center gap-3 rounded-control px-3 py-3 text-base font-semibold text-secondary transition-colors duration-200 hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  }
+
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-control px-4 py-2 text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50;
   }
