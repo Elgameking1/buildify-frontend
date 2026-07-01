@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   FiArrowLeft,
@@ -15,7 +14,6 @@ import { workers } from '../constants/workersData'
 function WorkerDetails() {
   const { id } = useParams()
   const worker = workers.find((item) => item.id === id)
-  const [hireMessage, setHireMessage] = useState('')
 
   if (!worker) {
     return (
@@ -116,22 +114,13 @@ function WorkerDetails() {
               </span>
             </div>
 
-            <button
-              type="button"
+            <Link
+              to={`/workers/${worker.id}/hire`}
               className="btn-primary min-h-12"
-              onClick={() =>
-                setHireMessage(`Hire request sent to ${worker.name}.`)
-              }
             >
               <FiUserCheck aria-hidden="true" />
               Hire Worker
-            </button>
-
-            {hireMessage ? (
-              <p className="rounded-control bg-accent-50 px-4 py-3 text-sm font-semibold text-accent">
-                {hireMessage}
-              </p>
-            ) : null}
+            </Link>
           </div>
 
           <div className="surface-panel grid gap-4 p-6">

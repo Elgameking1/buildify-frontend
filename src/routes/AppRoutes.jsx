@@ -5,6 +5,7 @@ import About from '../pages/About'
 import Cart from '../pages/Cart'
 import Contact from '../pages/Contact'
 import Dashboard from '../pages/Dashboard'
+import HireWorker from '../pages/HireWorker'
 import Home from '../pages/Home'
 import Login from '../pages/Login'
 import MaterialDetails from '../pages/MaterialDetails'
@@ -35,6 +36,7 @@ function AppRoutes() {
           <Route path="materials/:id" element={<MaterialDetails />} />
           <Route path="workers" element={<Workers />} />
           <Route path="workers/:id" element={<WorkerDetails />} />
+          <Route path="workers/:id/hire" element={<HireWorker />} />
           <Route path="cart" element={<Cart />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
