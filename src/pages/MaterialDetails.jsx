@@ -11,6 +11,7 @@ import {
 import ProductCard from '../components/ProductCard'
 import SectionHeader from '../components/SectionHeader'
 import { materials } from '../constants/materialsData'
+import { useCart } from '../hooks/useCart'
 
 function formatCedi(amount) {
   return `GH₵${new Intl.NumberFormat('en-US', {
@@ -24,6 +25,7 @@ function MaterialDetails() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [cartMessage, setCartMessage] = useState('')
+  const { addItem } = useCart()
 
   const relatedProducts = useMemo(() => {
     if (!product) {
@@ -187,9 +189,10 @@ function MaterialDetails() {
             <button
               type="button"
               className="btn-primary min-h-12"
-              onClick={() =>
+              onClick={() => {
+                addItem(product, quantity)
                 setCartMessage(`${quantity} ${product.name} added to cart.`)
-              }
+              }}
             >
               <FiShoppingCart aria-hidden="true" />
               Add to Cart
