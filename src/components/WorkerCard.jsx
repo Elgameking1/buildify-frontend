@@ -1,4 +1,5 @@
-import { FiMapPin, FiStar } from 'react-icons/fi'
+import { Link } from 'react-router-dom'
+import { FiClock, FiMapPin, FiStar } from 'react-icons/fi'
 
 function WorkerCard({ worker }) {
   return (
@@ -27,10 +28,21 @@ function WorkerCard({ worker }) {
           <FiMapPin aria-hidden="true" />
           {worker.location}
         </span>
+        {worker.availability ? (
+          <span className="inline-flex items-center gap-2">
+            <FiClock aria-hidden="true" />
+            {worker.availability}
+          </span>
+        ) : null}
       </div>
-      <button type="button" className="btn-accent">
+      <div className="flex items-center justify-between gap-3">
+        {worker.rate ? (
+          <span className="font-black text-secondary">{worker.rate}</span>
+        ) : null}
+        <Link to={`/workers/${worker.id}`} className="btn-accent">
         View Profile
-      </button>
+        </Link>
+      </div>
     </article>
   )
 }
