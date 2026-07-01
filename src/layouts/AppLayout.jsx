@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom'
-import { Toaster } from 'react-hot-toast'
 import Footer from '../components/Footer'
 import Navbar from '../components/Navbar'
+import Toast from '../components/ui/Toast'
 
 function AppLayout() {
   return (
@@ -13,7 +13,7 @@ function AppLayout() {
         </main>
         <Footer />
       </div>
-      <Toaster position="top-right" />
+      <Toast />
     </>
   )
 }
