@@ -1,7 +1,7 @@
-import PagePlaceholder from './PagePlaceholder'
+import HeroSection from '../components/HeroSection'
 
 function Home() {
-  return <PagePlaceholder title="Online Marketplace" />
+  return <HeroSection />
 }
 
 export default Home
