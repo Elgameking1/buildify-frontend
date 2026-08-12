@@ -61,7 +61,7 @@ function HeroSection() {
       </motion.div>
 
       <motion.div
-        className="relative min-h-[320px] overflow-hidden rounded-panel border border-concrete bg-secondary shadow-construction lg:min-h-[460px]"
+        className="relative min-h-[320px] overflow-hidden rounded-panel border border-concrete bg-ink shadow-construction lg:min-h-[460px]"
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}

@@ -89,7 +89,7 @@ function Materials() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
           <div className="grid gap-4">
             <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
@@ -98,7 +98,7 @@ function Materials() {
             <h1 className="text-balance text-4xl font-black md:text-5xl">
               Source trusted building materials for every stage of work.
             </h1>
-            <p className="max-w-2xl leading-7 text-secondary-100">
+            <p className="max-w-2xl leading-7 text-on-ink">
               Search live supplier listings, filter by project need, compare
               pricing, and check availability before moving to details.
             </p>
@@ -134,7 +134,7 @@ function Materials() {
         <div className="surface-panel grid gap-4 p-4 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <label className="grid gap-2">
             <span className="form-label">Search</span>
-            <span className="flex items-center gap-3 rounded-control border border-concrete bg-white px-3 py-2 text-steel focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
+            <span className="flex items-center gap-3 rounded-control border border-concrete bg-surface px-3 py-2 text-steel focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
               <FiSearch aria-hidden="true" />
               <input
                 type="search"

@@ -75,7 +75,7 @@ function Profile() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-4">
           <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
             Account
@@ -89,7 +89,7 @@ function Profile() {
       <section className="page-container grid gap-8 section-spacing lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
         <aside className="surface-panel grid gap-5 p-6">
           <div className="flex items-center gap-4">
-            <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-black text-secondary-900">
+            <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-black text-on-primary">
               {initials}
             </div>
             <div>
@@ -179,7 +179,7 @@ function Profile() {
           >
             <label className="grid gap-2 sm:col-span-2">
               <span className="form-label">Full name</span>
-              <span className="flex items-center gap-3 rounded-control border border-concrete bg-white px-3 py-2 focus-within:border-accent">
+              <span className="flex items-center gap-3 rounded-control border border-concrete bg-surface px-3 py-2 focus-within:border-accent">
                 <FiUser className="text-steel" aria-hidden="true" />
                 <input
                   className="w-full bg-transparent text-secondary outline-none"

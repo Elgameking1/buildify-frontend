@@ -56,7 +56,7 @@ function WorkerDetails() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-6">
           <Link
             to="/workers"
@@ -73,7 +73,7 @@ function WorkerDetails() {
 
             <div className="grid gap-4">
               <div className="flex flex-wrap gap-3">
-                <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-secondary-900">
+                <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-on-primary">
                   {worker.profession}
                 </span>
                 <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">
@@ -84,10 +84,10 @@ function WorkerDetails() {
                 <h1 className="text-balance text-4xl font-black md:text-5xl">
                   {worker.name}
                 </h1>
-                <p className="text-xl font-semibold text-secondary-100">
+                <p className="text-xl font-semibold text-on-ink">
                   {worker.role}
                 </p>
-                <p className="max-w-3xl leading-7 text-secondary-100">
+                <p className="max-w-3xl leading-7 text-on-ink">
                   {worker.bio}
                 </p>
               </div>
@@ -262,7 +262,7 @@ function WorkerDetails() {
                         {review.rating} rating
                       </span>
                     </div>
-                    <div className="grid size-11 place-items-center rounded-full bg-secondary text-sm font-black text-white">
+                    <div className="grid size-11 place-items-center rounded-full bg-ink text-sm font-black text-white">
                       {review.name
                         .split(' ')
                         .map((part) => part[0])

@@ -1,11 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link, useNavigate } from 'react-router-dom'
 import {
+  FiCreditCard,
   FiMinus,
   FiPlus,
   FiShoppingBag,
+  FiSmartphone,
   FiTrash2,
   FiTruck,
 } from 'react-icons/fi'
@@ -13,6 +15,15 @@ import { materialImage } from '../constants/materialImages'
 import { useCart } from '../hooks/useCart'
 import { apiErrorMessage } from '../services/api'
 import { ordersService } from '../services/ordersService'
+import { paymentsService } from '../services/paymentsService'
+
+// `channels` is passed straight to Paystack, which opens on the matching tab.
+// An empty list means "offer everything you support".
+const PAYMENT_METHODS = [
+  { id: 'both', label: 'Either', Icon: FiShoppingBag, channels: [] },
+  { id: 'mobile_money', label: 'MoMo', Icon: FiSmartphone, channels: ['mobile_money'] },
+  { id: 'card', label: 'Card', Icon: FiCreditCard, channels: ['card'] },
+]
 
 function formatCedi(amount) {
   return `GH₵${new Intl.NumberFormat('en-US', {
@@ -62,17 +73,50 @@ function Cart() {
   const queryClient = useQueryClient()
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [contactPhone, setContactPhone] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('both')
+  const selectedChannels =
+    PAYMENT_METHODS.find((method) => method.id === paymentMethod)?.channels ?? []
+
+  // Hidden entirely when the server has no Paystack keys, so the button never
+  // promises a checkout that cannot start.
+  const { data: paymentConfig } = useQuery({
+    queryKey: ['payment-config'],
+    queryFn: paymentsService.getConfig,
+    staleTime: 5 * 60_000,
+  })
+  const paymentsEnabled = paymentConfig?.enabled ?? false
 
   const checkout = useMutation({
     mutationFn: ordersService.placeOrder,
-    onSuccess: (order) => {
+    onSuccess: async (order) => {
       // Checkout empties the cart server-side, so refetch rather than guess.
       queryClient.invalidateQueries({ queryKey: ['cart'] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
-      toast.success(`Order ${order.reference} placed`)
-      // Straight to the order history, where the new order and each vendor's
-      // progress on it are visible.
-      navigate('/orders')
+
+      if (!paymentsEnabled) {
+        toast.success(`Order ${order.reference} placed`)
+        navigate('/orders')
+        return
+      }
+
+      // The order exists and stock is already committed to it. If starting the
+      // payment fails from here, the customer is sent to /orders where the
+      // order is waiting with a Pay button - never left on an empty cart
+      // wondering whether anything happened.
+      try {
+        const { authorizationUrl } = await paymentsService.initialize({
+          orderId: order.id,
+          channels: selectedChannels,
+        })
+        // A full navigation, not react-router: the destination is Paystack's
+        // own domain.
+        window.location.assign(authorizationUrl)
+      } catch (error) {
+        toast.error(
+          apiErrorMessage(error, 'Order placed, but payment could not be started.'),
+        )
+        navigate('/orders')
+      }
     },
     onError: (error) => {
       // A 409 here is the backend refusing to oversell - the stock ran out
@@ -86,6 +130,8 @@ function Cart() {
     checkout.mutate({ deliveryAddress, contactPhone })
   }
 
+  // isPending stays true through the redirect, so the button cannot be pressed
+  // twice while the browser is on its way to Paystack.
   const isPlacingOrder = checkout.isPending
   // There is no delivery fee to show. This used to add a flat GH₵25 "estimated
   // delivery" to the total, which no part of the system charges - the order the
@@ -102,7 +148,7 @@ function Cart() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-4">
           <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
             Shopping Cart
@@ -112,7 +158,7 @@ function Cart() {
               <h1 className="text-balance text-4xl font-black md:text-5xl">
                 Review your material order.
               </h1>
-              <p className="max-w-2xl leading-7 text-secondary-100">
+              <p className="max-w-2xl leading-7 text-on-ink">
                 Adjust quantities, remove products, and confirm the subtotal
                 before placing your order. Stock is re-checked at checkout.
               </p>
@@ -137,7 +183,7 @@ function Cart() {
               </div>
             ) : null}
 
-            <div className="hidden overflow-hidden rounded-panel border border-concrete bg-white shadow-construction md:block">
+            <div className="hidden overflow-hidden rounded-panel border border-concrete bg-surface shadow-construction md:block">
               <table className="w-full border-collapse text-left">
                 <thead className="bg-secondary-50 text-sm text-secondary">
                   <tr>
@@ -163,7 +209,7 @@ function Cart() {
                           <img
                             src={materialImage(item.product)}
                             alt=""
-                            className="size-16 shrink-0 rounded-control bg-secondary object-cover"
+                            className="size-16 shrink-0 rounded-control bg-ink object-cover"
                             loading="lazy"
                           />
                           <div>
@@ -223,7 +269,7 @@ function Cart() {
                       <img
                         src={materialImage(item.product)}
                         alt=""
-                        className="size-20 shrink-0 rounded-control bg-secondary object-cover"
+                        className="size-20 shrink-0 rounded-control bg-ink object-cover"
                         loading="lazy"
                       />
                       <div className="grid gap-1">
@@ -347,13 +393,56 @@ function Cart() {
                 onChange={(event) => setContactPhone(event.target.value)}
               />
             </label>
+            {paymentsEnabled ? (
+              <fieldset className="grid gap-2">
+                <legend className="form-label mb-1">Pay with</legend>
+                {/* Preselects the tab on Paystack's page rather than adding a
+                    step here. "Either" sends both channels and lets the payer
+                    choose there, which is also the fallback if one method is
+                    unavailable for their bank. */}
+                <div className="grid grid-cols-3 gap-2">
+                  {PAYMENT_METHODS.map((method) => {
+                    const isSelected = paymentMethod === method.id
+                    return (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => setPaymentMethod(method.id)}
+                        aria-pressed={isSelected}
+                        className={`grid justify-items-center gap-1 rounded-control border px-2 py-3 text-xs font-bold transition-colors ${
+                          isSelected
+                            ? 'border-primary bg-primary-50 text-primary-700'
+                            : 'border-concrete text-steel hover:border-primary'
+                        }`}
+                      >
+                        <method.Icon aria-hidden="true" className="size-4" />
+                        {method.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </fieldset>
+            ) : null}
+
             <button
               type="submit"
               className="btn-primary min-h-12"
               disabled={isPlacingOrder || items.length === 0}
             >
-              {isPlacingOrder ? 'Placing order…' : 'Place Order'}
+              {isPlacingOrder
+                ? paymentsEnabled
+                  ? 'Taking you to payment…'
+                  : 'Placing order…'
+                : paymentsEnabled
+                  ? `Pay Now · ${formatCedi(orderTotal)}`
+                  : 'Place Order'}
             </button>
+            {paymentsEnabled ? (
+              <p className="text-center text-xs text-steel">
+                You will be redirected to Paystack to pay by card or mobile
+                money. Your vendors are only notified once payment succeeds.
+              </p>
+            ) : null}
           </form>
           <Link to="/materials" className="btn-secondary">
             Add more materials

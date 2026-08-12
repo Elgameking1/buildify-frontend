@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import {
   FiChevronDown,
   FiChevronUp,
+  FiCreditCard,
   FiMapPin,
   FiPackage,
   FiPhone,
@@ -13,6 +14,7 @@ import {
 } from 'react-icons/fi'
 import { apiErrorMessage } from '../services/api'
 import { ordersService } from '../services/ordersService'
+import { paymentsService } from '../services/paymentsService'
 
 const cedi = (amount) =>
   `GH₵${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(amount ?? 0)}`
@@ -40,6 +42,35 @@ const ORDER_TONES = {
   CONFIRMED: 'bg-accent-50 text-accent',
   FULFILLED: 'bg-accent-50 text-accent',
   CANCELLED: 'bg-secondary-100 text-secondary-700',
+}
+
+// Payment state -> badge. Absent means no attempt has been made yet, which is
+// shown as nothing rather than as a scary "unpaid" chip on a fresh order.
+const PAYMENT_TONES = {
+  SUCCESS: 'bg-accent-50 text-accent',
+  PENDING: 'bg-primary-50 text-primary-700',
+  FAILED: 'bg-secondary-100 text-secondary-700',
+  ABANDONED: 'bg-secondary-100 text-secondary-700',
+}
+
+const PAYMENT_LABELS = {
+  SUCCESS: 'Paid',
+  PENDING: 'Payment pending',
+  FAILED: 'Payment failed',
+  ABANDONED: 'Payment incomplete',
+}
+
+function PaymentBadge({ status }) {
+  if (!status) return null
+  return (
+    <span
+      className={`rounded-full px-3 py-1 text-xs font-bold ${
+        PAYMENT_TONES[status] ?? 'bg-secondary-100 text-secondary-700'
+      }`}
+    >
+      {PAYMENT_LABELS[status] ?? titleCase(status)}
+    </span>
+  )
 }
 
 // A line can only be cancelled while no vendor has dispatched anything.
@@ -76,6 +107,25 @@ function Orders() {
 
   const orders = useMemo(() => data?.items ?? [], [data])
 
+  const { data: paymentConfig } = useQuery({
+    queryKey: ['payment-config'],
+    queryFn: paymentsService.getConfig,
+    staleTime: 5 * 60_000,
+  })
+  const paymentsEnabled = paymentConfig?.enabled ?? false
+
+  // Retrying an abandoned checkout starts a *new* Paystack transaction rather
+  // than reopening the old one: a reference Paystack has already seen cannot be
+  // initialised again, so the backend issues a fresh one each time.
+  const payNow = useMutation({
+    mutationFn: async (orderId) => {
+      const { authorizationUrl } = await paymentsService.initialize({ orderId })
+      window.location.assign(authorizationUrl)
+    },
+    onError: (error) =>
+      toast.error(apiErrorMessage(error, 'Could not start that payment.')),
+  })
+
   const cancel = useMutation({
     mutationFn: (orderId) => ordersService.cancelOrder(orderId),
     onSuccess: () => {
@@ -99,7 +149,7 @@ function Orders() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="grid gap-4">
             <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
@@ -108,7 +158,7 @@ function Orders() {
             <h1 className="text-balance text-4xl font-black md:text-5xl">
               Every order you have placed.
             </h1>
-            <p className="max-w-2xl leading-7 text-secondary-100">
+            <p className="max-w-2xl leading-7 text-on-ink">
               Expand an order to see each vendor's progress on their own lines,
               and cancel while nothing has been dispatched yet.
             </p>
@@ -182,6 +232,7 @@ function Orders() {
                           {order.reference}
                         </h2>
                         <StatusBadge status={order.status} />
+                        <PaymentBadge status={order.paymentStatus} />
                       </div>
                       <div className="grid gap-2 text-sm text-steel sm:grid-cols-2">
                         <span className="inline-flex items-center gap-2">
@@ -216,6 +267,26 @@ function Orders() {
                         )}
                         {isExpanded ? 'Hide' : 'Details'}
                       </button>
+                      {/* An unpaid order is the common case after an abandoned
+                          or failed checkout, and without a way back the stock
+                          stays committed to an order nobody can complete. */}
+                      {paymentsEnabled &&
+                      !order.isPaid &&
+                      order.status !== 'CANCELLED' ? (
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          disabled={payNow.isPending}
+                          onClick={() => payNow.mutate(order.id)}
+                        >
+                          <FiCreditCard aria-hidden="true" />
+                          {payNow.isPending && payNow.variables === order.id
+                            ? 'Opening…'
+                            : order.paymentStatus
+                              ? 'Retry payment'
+                              : 'Pay now'}
+                        </button>
+                      ) : null}
                       {CANCELLABLE.has(order.status) ? (
                         <button
                           type="button"
@@ -236,7 +307,7 @@ function Orders() {
                         {order.items.map((item) => (
                           <div
                             key={item.id}
-                            className="grid gap-3 rounded-panel border border-concrete bg-white p-4 sm:grid-cols-[1fr_auto] sm:items-center"
+                            className="grid gap-3 rounded-panel border border-concrete bg-surface p-4 sm:grid-cols-[1fr_auto] sm:items-center"
                           >
                             <div className="grid gap-1">
                               <p className="font-bold text-secondary">

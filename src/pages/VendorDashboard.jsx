@@ -283,7 +283,7 @@ function VendorDashboard() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="grid gap-4">
             <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
@@ -292,7 +292,7 @@ function VendorDashboard() {
             <h1 className="text-balance text-4xl font-black md:text-5xl">
               Manage products, orders, and vendor performance.
             </h1>
-            <p className="max-w-2xl leading-7 text-secondary-100">
+            <p className="max-w-2xl leading-7 text-on-ink">
               Your live workspace for catalog activity, order fulfilment, and
               supplier profile readiness.
             </p>
@@ -478,7 +478,7 @@ function VendorDashboard() {
                             <img
                               src={materialImage(product)}
                               alt=""
-                              className="size-12 shrink-0 rounded-control bg-secondary object-cover"
+                              className="size-12 shrink-0 rounded-control bg-ink object-cover"
                               loading="lazy"
                             />
                             <div>
@@ -582,7 +582,7 @@ function VendorDashboard() {
                 {vendorOrders.map((order) => (
                   <article
                     key={order.id}
-                    className="grid gap-4 rounded-panel border border-concrete bg-white p-4 lg:grid-cols-[1fr_auto] lg:items-center"
+                    className="grid gap-4 rounded-panel border border-concrete bg-surface p-4 lg:grid-cols-[1fr_auto] lg:items-center"
                   >
                     <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-center">
                       <div className="grid size-12 place-items-center rounded-control bg-primary-50 text-primary-700">
@@ -649,7 +649,7 @@ function VendorDashboard() {
           <aside className="grid gap-5">
             <section className="surface-panel grid gap-5 p-6">
               <div className="flex items-center gap-4">
-                <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-black text-secondary-900">
+                <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-black text-on-primary">
                   {initials}
                 </div>
                 <div>

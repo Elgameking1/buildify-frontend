@@ -1,9 +1,13 @@
 import { cn } from '../../utils/classNames'
 
 const variants = {
-  primary: 'bg-primary text-secondary-900 hover:bg-primary-600 focus-visible:outline-primary',
-  secondary: 'bg-secondary text-white hover:bg-secondary-700 focus-visible:outline-secondary',
-  accent: 'bg-accent text-white hover:bg-accent-700 focus-visible:outline-accent',
+  primary: 'bg-primary text-on-primary hover:bg-primary-600 focus-visible:outline-primary',
+  // ink-hover, not secondary-700: that token is a text colour that inverts, so
+  // hovering would have lightened the button behind its own white label.
+  secondary: 'bg-ink text-white hover:bg-ink-hover focus-visible:outline-secondary',
+  // accent-600 rather than accent, matching .btn-accent - `accent` brightens in
+  // dark mode for use as a text colour and would fail contrast under white.
+  accent: 'bg-accent-600 text-white hover:bg-accent-700 focus-visible:outline-accent',
   ghost: 'bg-transparent text-secondary hover:bg-secondary-50 focus-visible:outline-secondary',
 }
 

@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+/**
+ * Theming.
+ *
+ * Tailwind v4 compiles `bg-surface` to `background-color: var(--color-surface)`
+ * rather than to a literal, so redefining the custom properties under a
+ * selector re-themes every utility built from them.  That is what makes a dark
+ * mode possible here without touching 200-odd `text-secondary` usages: the
+ * palette is named by role, so the roles just take different values.
+ *
+ * Three states, not two. An explicit choice sets data-theme on <html>; with no
+ * attribute the page follows the device, which is the default. Hence the
+ * `:not([data-theme="light"])` guard on the media query - without it, a user
+ * who explicitly chose light on a dark-set phone would still get dark.
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
 
@@ -26,6 +42,26 @@
   --color-surface: #ffffff;
   --color-warning: #facc15;
 
+  /* A deliberately high-contrast surface that always carries white text -
+     the footer, solid buttons, badges.  It cannot be `secondary`, because
+     that token is the body text colour and has to invert in dark mode;
+     anything painted with it would then become a light panel still labelled
+     with white text. */
+  --color-ink: #1f2937;
+  --color-ink-hover: #374151;
+
+  /* Two colours whose polarity is fixed by what they sit on, not by the
+     theme. Every hero and the footer paint `bg-ink` and every badge and solid
+     button paints `bg-primary`, and neither of those surfaces inverts - so
+     their text must not either.
+
+     They existed before as `secondary-100` and `secondary-900`, which also
+     serve as a panel background and a heading colour respectively. Those two
+     roles *do* invert, and sharing one token meant the hero copy went dark on
+     dark the moment the palette flipped. */
+  --color-on-ink: #f3f4f6;
+  --color-on-primary: #111827;
+
   --shadow-construction: 0 18px 40px rgb(31 41 55 / 0.12);
   --radius-control: 0.5rem;
   --radius-panel: 0.5rem;
@@ -36,6 +72,98 @@
   --space-page-y: clamp(1.5rem, 5vw, 5rem);
   --space-section: clamp(2rem, 6vw, 6rem);
   --space-stack: clamp(1rem, 3vw, 2rem);
+
+  /* The amber wash on <body>. Nearly invisible on white, and it has to be
+     re-stated in dark or it turns into a muddy brown haze. */
+  --wash: rgb(245 158 11 / 0.04);
+  color-scheme: light;
+}
+
+/**
+ * The dark palette, stated once per selector because CSS has no mixins.
+ *
+ * Tokens that deliberately do NOT invert:
+ *   --color-primary       amber is the brand and reads on both grounds
+ *   --color-ink*          a strong surface under white text in both themes;
+ *                         in dark it lifts slightly instead of dropping, so it
+ *                         still separates from the page behind it
+ *   --color-on-primary    text on amber, which never inverts
+ *   --color-on-ink        text on ink; it lifts with ink rather than flipping
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-surface: #0f1720;
+    --color-secondary: #e6e9ee;
+    --color-secondary-50: #1a2331;
+    --color-secondary-100: #222d3d;
+    --color-secondary-600: #aeb7c4;
+    --color-secondary-700: #4b5563;
+    --color-concrete: #2c3948;
+    --color-steel: #98a3b3;
+
+    /* primary-700 is a *text* colour on the amber tints above (31 pairings)
+       and on the page itself. Left dark it would be dark-on-dark here, so it
+       inverts to a light amber; nothing paints a background with it. */
+    --color-primary-50: #2a2317;
+    --color-primary-100: #3a3020;
+    --color-primary-700: #fcd34d;
+
+    --color-accent: #7cb2fb;
+    --color-accent-50: #16233a;
+    --color-accent-600: #2563eb;
+    --color-accent-700: #1d4ed8;
+
+    --color-ink: #273343;
+    --color-ink-hover: #334256;
+
+    /* Now free to invert: nothing paints a background with either, and both
+       are read against `surface` or the tinted panels. */
+    --color-secondary-900: #f3f6fa;
+    --color-secondary-700: #c2cad6;
+    /* Ink lifts to #273343 in dark, so its text lifts with it. */
+    --color-on-ink: #dfe4ec;
+
+    --shadow-construction: 0 18px 40px rgb(0 0 0 / 0.45);
+    --wash: rgb(245 158 11 / 0.05);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-surface: #0f1720;
+  --color-secondary: #e6e9ee;
+  --color-secondary-50: #1a2331;
+  --color-secondary-100: #222d3d;
+  --color-secondary-600: #aeb7c4;
+  --color-secondary-700: #4b5563;
+  --color-concrete: #2c3948;
+  --color-steel: #98a3b3;
+
+  /* primary-700 is a *text* colour on the amber tints above (31 pairings)
+     and on the page itself. Left dark it would be dark-on-dark here, so it
+     inverts to a light amber; nothing paints a background with it. */
+  --color-primary-50: #2a2317;
+  --color-primary-100: #3a3020;
+  --color-primary-700: #fcd34d;
+
+  --color-accent: #7cb2fb;
+  --color-accent-50: #16233a;
+  --color-accent-600: #2563eb;
+  --color-accent-700: #1d4ed8;
+
+  --color-ink: #273343;
+  --color-ink-hover: #334256;
+
+  /* Now free to invert: nothing paints a background with either, and both
+     are read against `surface` or the tinted panels. */
+  --color-secondary-900: #f3f6fa;
+  --color-secondary-700: #c2cad6;
+  /* Ink lifts to #273343 in dark, so its text lifts with it. */
+  --color-on-ink: #dfe4ec;
+
+  --shadow-construction: 0 18px 40px rgb(0 0 0 / 0.45);
+  --wash: rgb(245 158 11 / 0.05);
+  color-scheme: dark;
 }
 
 @layer base {
@@ -56,7 +184,7 @@
     margin: 0;
     min-width: 320px;
     background:
-      linear-gradient(135deg, rgb(245 158 11 / 0.04), transparent 32rem),
+      linear-gradient(135deg, var(--wash), transparent 32rem),
       var(--color-surface);
   }
 
@@ -95,15 +223,19 @@
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-control bg-primary px-4 py-2 text-sm font-semibold text-secondary-900 transition-colors duration-200 hover:bg-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-control bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition-colors duration-200 hover:bg-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-control bg-secondary px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-secondary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-control bg-ink px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-ink-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary disabled:pointer-events-none disabled:opacity-50;
   }
 
+  /* bg-accent-600, not bg-accent: `accent` doubles as a text colour
+     (`text-accent`, 11 usages on tinted panels) and has to brighten in dark
+     mode to stay legible there. A bright blue behind white button text would
+     fail contrast, so the button keeps its own shade, which does not move. */
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 rounded-control bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-control bg-accent-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50;
   }
 
   .form-label {
@@ -111,7 +243,7 @@
   }
 
   .form-input {
-    @apply w-full rounded-control border border-concrete bg-white px-3 py-2 text-secondary outline-none transition-colors placeholder:text-steel focus:border-accent focus:ring-2 focus:ring-accent/20;
+    @apply w-full rounded-control border border-concrete bg-surface px-3 py-2 text-secondary outline-none transition-colors placeholder:text-steel focus:border-accent focus:ring-2 focus:ring-accent/20;
   }
 }
 
@@ -133,7 +265,7 @@
     background-image: repeating-linear-gradient(
       135deg,
       var(--color-primary) 0 12px,
-      var(--color-secondary) 12px 24px
+      var(--color-ink) 12px 24px
     );
   }
 

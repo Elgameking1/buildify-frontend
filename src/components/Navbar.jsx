@@ -12,6 +12,7 @@ import {
 import toast from 'react-hot-toast'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
+import ThemeToggle from './ui/ThemeToggle'
 import { useCart } from '../hooks/useCart'
 import { authService } from '../services/authService'
 import { notificationsService } from '../services/notificationsService'
@@ -121,6 +122,8 @@ function Navbar() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
+
             {accountLinks.map((link) => {
               const Icon = link.icon
 
@@ -133,7 +136,7 @@ function Navbar() {
                   {Icon ? <Icon aria-hidden="true" /> : null}
                   {link.label}
                   {link.label === 'Cart' && totalQuantity > 0 ? (
-                    <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs font-black text-secondary-900">
+                    <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs font-black text-on-primary">
                       {totalQuantity}
                     </span>
                   ) : null}
@@ -154,7 +157,7 @@ function Navbar() {
                 >
                   <FiBell aria-hidden="true" />
                   {unreadCount > 0 ? (
-                    <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-xs font-black text-secondary-900">
+                    <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-xs font-black text-on-primary">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   ) : null}
@@ -207,13 +210,23 @@ function Navbar() {
                   {Icon ? <Icon aria-hidden="true" /> : null}
                   {link.label}
                   {link.label === 'Notifications' && unreadCount > 0 ? (
-                    <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-black text-secondary-900">
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-black text-on-primary">
                       {unreadCount}
                     </span>
                   ) : null}
                 </Link>
               )
             })}
+
+            {/* The desktop toggle is icon-only, which works beside other
+                icons; in the drawer everything else is a labelled row, so it
+                gets a label to match rather than sitting there unexplained. */}
+            <div className="flex items-center justify-between rounded-control px-3 py-2">
+              <span className="text-base font-semibold text-secondary">
+                Appearance
+              </span>
+              <ThemeToggle />
+            </div>
 
             {isAuthenticated ? (
               <button

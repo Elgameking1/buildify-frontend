@@ -31,11 +31,11 @@ const contactDetails = [
 
 function Footer() {
   return (
-    <footer className="border-t border-concrete bg-secondary text-white">
+    <footer className="border-t border-concrete bg-ink text-white">
       <div className="page-container grid gap-10 py-12 lg:grid-cols-[1.3fr_1fr_1fr_1.2fr]">
         <div className="grid content-start gap-4">
           <Link to="/" className="flex w-fit items-center">
-            {/* The footer is bg-secondary (#1f2937) and the brand green is
+            {/* The footer is bg-ink (#1f2937) and the brand green is
                 #023522 - the full-colour lockup is unreadable against it, so
                 this surface gets the variant whose ink is white. */}
             <img
@@ -46,7 +46,7 @@ function Footer() {
               className="h-10 w-auto"
             />
           </Link>
-          <p className="max-w-sm text-sm leading-6 text-secondary-100">
+          <p className="max-w-sm text-sm leading-6 text-on-ink">
             Construction materials and skilled workers in one place. Payment and
             delivery are arranged directly between buyer and seller.
           </p>
@@ -63,7 +63,7 @@ function Footer() {
                 <li key={link.to}>
                   <Link
                     to={link.to}
-                    className="text-secondary-100 transition-colors hover:text-primary"
+                    className="text-on-ink transition-colors hover:text-primary"
                   >
                     {link.label}
                   </Link>
@@ -77,7 +77,7 @@ function Footer() {
           <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-primary">
             Get in touch
           </h2>
-          <ul className="grid gap-3 text-sm text-secondary-100">
+          <ul className="grid gap-3 text-sm text-on-ink">
             {contactDetails.map((detail) => {
               const Icon = detail.icon
 
@@ -93,7 +93,7 @@ function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="page-container flex flex-col gap-2 py-5 text-sm text-secondary-100 sm:flex-row sm:items-center sm:justify-between">
+        <div className="page-container flex flex-col gap-2 py-5 text-sm text-on-ink sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} Buildify. Construction materials and
             skilled workers.

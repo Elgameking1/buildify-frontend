@@ -59,13 +59,13 @@ function Home() {
       <HeroSection />
 
       <section className="page-container grid gap-8 section-spacing">
-        <div className="grid gap-4 rounded-panel bg-secondary p-5 text-white shadow-construction md:grid-cols-4">
+        <div className="grid gap-4 rounded-panel bg-ink p-5 text-white shadow-construction md:grid-cols-4">
           {stats.map((stat) => (
             <div key={stat.id} className="grid gap-1 text-center md:text-left">
               <span className="text-3xl font-black text-primary">
                 {stat.value ?? '—'}
               </span>
-              <span className="text-sm font-semibold text-secondary-100">
+              <span className="text-sm font-semibold text-on-ink">
                 {stat.label}
               </span>
             </div>
@@ -185,7 +185,7 @@ function Home() {
         )}
       </section>
 
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
           <div className="grid gap-4">
             <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
@@ -194,14 +194,14 @@ function Home() {
             <h2 className="text-balance text-3xl font-black md:text-4xl">
               From search to site delivery in a clear workflow.
             </h2>
-            <p className="leading-7 text-secondary-100">
+            <p className="leading-7 text-on-ink">
               The marketplace takes you from discovery through purchase, hiring
               and fulfilment - with each step recorded on both sides.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2">
             {howItWorksSteps.map((step, index) => (
-              <div key={step.id} className="rounded-panel bg-white p-5">
+              <div key={step.id} className="rounded-panel bg-surface p-5">
                 <StepCard step={step} index={index} />
               </div>
             ))}
@@ -212,7 +212,7 @@ function Home() {
       <section className="page-container section-spacing">
         <div className="grid gap-8 rounded-panel bg-primary p-6 shadow-construction lg:grid-cols-[1fr_0.9fr] lg:items-center lg:p-10">
           <div className="grid gap-5">
-            <span className="w-fit rounded-full bg-secondary px-4 py-2 text-sm font-bold text-white">
+            <span className="w-fit rounded-full bg-ink px-4 py-2 text-sm font-bold text-white">
               What you can rely on
             </span>
             <div className="grid gap-3">

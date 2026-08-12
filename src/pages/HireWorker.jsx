@@ -122,17 +122,17 @@ function HireWorker() {
           </Link>
 
           <div className="surface-panel overflow-hidden">
-            <div className="bg-secondary p-6 text-white">
+            <div className="bg-ink p-6 text-white">
               <div className="grid gap-5">
                 <div className="grid size-28 place-items-center rounded-panel border border-white/10 bg-white/10 text-4xl font-black text-primary">
                   {initials}
                 </div>
                 <div className="grid gap-2">
-                  <span className="w-fit rounded-full bg-primary px-3 py-1 text-xs font-bold text-secondary-900">
+                  <span className="w-fit rounded-full bg-primary px-3 py-1 text-xs font-bold text-on-primary">
                     {worker.profession}
                   </span>
                   <h1 className="text-3xl font-black">{worker.name}</h1>
-                  <p className="text-secondary-100">{worker.role}</p>
+                  <p className="text-on-ink">{worker.role}</p>
                 </div>
               </div>
             </div>
@@ -229,7 +229,7 @@ function HireWorker() {
                 <label className="form-label" htmlFor="date">
                   Date
                 </label>
-                <span className="flex items-center gap-3 rounded-control border border-concrete bg-white px-3 py-2 text-steel focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
+                <span className="flex items-center gap-3 rounded-control border border-concrete bg-surface px-3 py-2 text-steel focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
                   <FiCalendar aria-hidden="true" />
                   <input
                     id="date"

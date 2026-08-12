@@ -120,7 +120,7 @@ function About() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
           <div className="grid gap-4">
             <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
@@ -130,7 +130,7 @@ function About() {
               One marketplace for construction materials and the people who use
               them.
             </h1>
-            <p className="max-w-2xl leading-7 text-secondary-100">
+            <p className="max-w-2xl leading-7 text-on-ink">
               Sourcing a project usually means two disconnected searches: one for
               supplies, another for a trusted tradesperson. This marketplace puts
               both on one account, with the same standard of verification on
@@ -245,7 +245,7 @@ function About() {
               Browse materials
               <FiArrowRight aria-hidden="true" />
             </Link>
-            <Link to="/contact" className="btn min-h-12 bg-white text-secondary">
+            <Link to="/contact" className="btn min-h-12 bg-surface text-secondary">
               Get in touch
             </Link>
           </div>

@@ -177,15 +177,15 @@ function Register() {
         </p>
       </div>
 
-      <div className="hidden rounded-panel bg-secondary p-8 text-white shadow-construction lg:grid lg:min-h-[560px] lg:content-between">
+      <div className="hidden rounded-panel bg-ink p-8 text-white shadow-construction lg:grid lg:min-h-[560px] lg:content-between">
         <div className="grid gap-4">
-          <span className="w-fit rounded-full bg-primary px-4 py-2 text-sm font-bold text-secondary-900">
+          <span className="w-fit rounded-full bg-primary px-4 py-2 text-sm font-bold text-on-primary">
             Join the network
           </span>
           <h2 className="text-balance text-4xl font-black">
             One account for buying, selling, or offering skilled labor.
           </h2>
-          <p className="leading-7 text-secondary-100">
+          <p className="leading-7 text-on-ink">
             Your role decides which dashboard you get: an order history, a
             product catalogue, or a queue of job requests.
           </p>

@@ -20,7 +20,7 @@ function Avatar({ className = '', name, src, size = 'md' }) {
   return (
     <div
       className={cn(
-        'grid shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-black text-secondary-900',
+        'grid shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-black text-on-primary',
         sizes[size],
         className,
       )}

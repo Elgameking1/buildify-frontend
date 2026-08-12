@@ -13,6 +13,12 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#023522" />
 
+    <!-- Render-blocking on purpose: it sets data-theme before the first paint,
+         so a user who chose dark never sees a white flash while the bundle
+         loads. A separate file rather than inline because the production CSP
+         is script-src 'self'. -->
+    <script src="/theme-init.js"></script>
+
     <title>Buildify — construction materials and skilled workers</title>
   </head>
   <body>

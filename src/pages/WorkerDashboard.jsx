@@ -39,7 +39,7 @@ const TRANSITION_MESSAGES = {
 
 function JobCard({ job, children }) {
   return (
-    <article className="rounded-panel border border-concrete bg-white p-4">
+    <article className="rounded-panel border border-concrete bg-surface p-4">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary-700">
@@ -216,7 +216,7 @@ function WorkerDashboard() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="grid gap-4">
             <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
@@ -225,7 +225,7 @@ function WorkerDashboard() {
             <h1 className="text-balance text-4xl font-black md:text-5xl">
               Manage job requests, bookings, and performance.
             </h1>
-            <p className="max-w-2xl leading-7 text-secondary-100">
+            <p className="max-w-2xl leading-7 text-on-ink">
               Your workspace for tracking pending jobs, accepted work,
               completed jobs, ratings, and availability.
             </p>
@@ -462,7 +462,7 @@ function WorkerDashboard() {
                 signed in. It is the signed-in worker's own profile now. */}
             <section className="surface-panel grid gap-5 p-6">
               <div className="flex items-center gap-4">
-                <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-black text-secondary-900">
+                <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-black text-on-primary">
                   {initials}
                 </div>
                 <div>

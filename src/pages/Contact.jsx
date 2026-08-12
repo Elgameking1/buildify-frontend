@@ -118,7 +118,7 @@ function Contact() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
           <div className="grid gap-4">
             <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
@@ -127,7 +127,7 @@ function Contact() {
             <h1 className="text-balance text-4xl font-black md:text-5xl">
               Talk to us about an order, a listing, or an account.
             </h1>
-            <p className="max-w-2xl leading-7 text-secondary-100">
+            <p className="max-w-2xl leading-7 text-on-ink">
               Problems with a specific order are usually fastest to solve from
               your dashboard, where the vendor and the current status are
               already attached. For everything else, the details are here.

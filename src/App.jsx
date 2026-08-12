@@ -1,11 +1,14 @@
 import AppRoutes from './routes/AppRoutes'
 import { CartProvider } from './context/CartContext'
+import { ThemeProvider } from './context/ThemeContext'
 
 function App() {
   return (
-    <CartProvider>
-      <AppRoutes />
-    </CartProvider>
+    <ThemeProvider>
+      <CartProvider>
+        <AppRoutes />
+      </CartProvider>
+    </ThemeProvider>
   )
 }
 

@@ -195,7 +195,7 @@ function Dashboard() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="grid gap-4">
             <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
@@ -204,7 +204,7 @@ function Dashboard() {
             <h1 className="text-balance text-4xl font-black md:text-5xl">
               Track your materials, worker hires, and project activity.
             </h1>
-            <p className="max-w-2xl leading-7 text-secondary-100">
+            <p className="max-w-2xl leading-7 text-on-ink">
               Your orders, hires and the actions waiting on you.
             </p>
           </div>
@@ -361,10 +361,10 @@ function Dashboard() {
                 {recentHires.map((hire) => (
                   <article
                     key={hire.id}
-                    className="rounded-panel border border-concrete bg-white p-4"
+                    className="rounded-panel border border-concrete bg-surface p-4"
                   >
                     <div className="mb-4 flex items-center gap-3">
-                      <div className="grid size-11 place-items-center rounded-full bg-primary text-sm font-black text-secondary-900">
+                      <div className="grid size-11 place-items-center rounded-full bg-primary text-sm font-black text-on-primary">
                         {hire.worker
                           .split(' ')
                           .map((part) => part[0])
@@ -466,7 +466,7 @@ function Dashboard() {
           <aside className="grid gap-5">
             <section className="surface-panel grid gap-5 p-6">
               <div className="flex items-center gap-4">
-                <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-black text-secondary-900">
+                <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-black text-on-primary">
                   {initials}
                 </div>
                 <div>

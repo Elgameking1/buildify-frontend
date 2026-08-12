@@ -22,7 +22,7 @@ function ProductCard({ product }) {
       <img
         src={materialImage(product)}
         alt={product.name}
-        className="h-40 w-full bg-secondary object-cover"
+        className="h-40 w-full bg-ink object-cover"
         loading="lazy"
       />
       <div className="grid gap-4 p-5">

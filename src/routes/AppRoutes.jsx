@@ -14,6 +14,7 @@ import Materials from '../pages/Materials'
 import NotFound from '../pages/NotFound'
 import Notifications from '../pages/Notifications'
 import Orders from '../pages/Orders'
+import PaymentCallback from '../pages/PaymentCallback'
 import Profile from '../pages/Profile'
 import Register from '../pages/Register'
 import VendorDashboard from '../pages/VendorDashboard'
@@ -72,6 +73,9 @@ function AppRoutes() {
           <Route element={<ProtectedRoute roles={['client']} />}>
             <Route path="cart" element={<Cart />} />
             <Route path="orders" element={<Orders />} />
+            {/* Paystack returns the browser here. Client-only like the rest of
+                buying, and the API re-checks ownership of the reference. */}
+            <Route path="payment/callback" element={<PaymentCallback />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="workers/:id/hire" element={<HireWorker />} />
           </Route>

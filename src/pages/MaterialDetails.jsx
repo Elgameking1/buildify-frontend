@@ -100,7 +100,7 @@ function MaterialDetails() {
               <img
                 src={selectedImage}
                 alt={product.name}
-                className="h-96 w-full bg-secondary object-cover"
+                className="h-96 w-full bg-ink object-cover"
                 loading="lazy"
               />
               {credit ? (
@@ -152,7 +152,7 @@ function MaterialDetails() {
                     <img
                       src={image}
                       alt=""
-                      className="h-24 w-full bg-secondary object-cover"
+                      className="h-24 w-full bg-ink object-cover"
                       loading="lazy"
                     />
                   </button>

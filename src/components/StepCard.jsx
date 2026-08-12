@@ -4,7 +4,7 @@ function StepCard({ step, index }) {
   return (
     <article className="grid gap-4">
       <div className="flex items-center gap-3">
-        <span className="grid size-10 place-items-center rounded-full bg-secondary font-bold text-white">
+        <span className="grid size-10 place-items-center rounded-full bg-ink font-bold text-white">
           {index + 1}
         </span>
         <div className="grid size-10 place-items-center rounded-control bg-primary-100 text-primary-700">

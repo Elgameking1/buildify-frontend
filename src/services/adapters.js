@@ -181,6 +181,11 @@ export function adaptOrder(order) {
     placedAt: order.placed_at,
     deliveryAddress: order.delivery_address,
     contactPhone: order.contact_phone,
+    // Null until a payment is attempted. Separate from `status`, which tracks
+    // vendor fulfilment - an order can be paid and still awaiting dispatch.
+    paymentStatus: order.payment_status ?? null,
+    paymentReference: order.payment_reference ?? null,
+    isPaid: order.payment_status === 'SUCCESS',
     items: (order.items ?? []).map((item) => ({
       id: item.id,
       productId: item.product_id,

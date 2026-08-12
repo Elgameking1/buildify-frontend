@@ -3,10 +3,12 @@ import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 import {
+  FiAlertCircle,
   FiBell,
   FiBriefcase,
   FiCheck,
   FiCheckCircle,
+  FiCreditCard,
   FiPackage,
   FiStar,
   FiTruck,
@@ -31,6 +33,10 @@ const KINDS = {
   JOB_COMPLETED: { icon: FiCheckCircle, label: 'Job', to: '/dashboard' },
   JOB_CANCELLED: { icon: FiCheckCircle, label: 'Job', to: '/dashboard' },
   REVIEW_RECEIVED: { icon: FiStar, label: 'Review', to: '/worker-dashboard' },
+  // Raised for both sides of a payment: the buyer sees their receipt, each
+  // vendor on the order sees their cue to start fulfilling.
+  PAYMENT_RECEIVED: { icon: FiCreditCard, label: 'Payment', to: '/orders' },
+  PAYMENT_FAILED: { icon: FiAlertCircle, label: 'Payment', to: '/orders' },
 }
 
 const DEFAULT_KIND = { icon: FiBell, label: 'Update', to: null }
@@ -97,7 +103,7 @@ function Notifications() {
 
   return (
     <main className="w-full">
-      <section className="bg-secondary text-white section-spacing">
+      <section className="bg-ink text-white section-spacing">
         <div className="page-container grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="grid gap-4">
             <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
@@ -106,7 +112,7 @@ function Notifications() {
             <h1 className="text-balance text-4xl font-black md:text-5xl">
               Everything that changed while you were away.
             </h1>
-            <p className="max-w-2xl leading-7 text-secondary-100">
+            <p className="max-w-2xl leading-7 text-on-ink">
               Orders, job requests and rating updates, newest first.
             </p>
           </div>
@@ -211,7 +217,7 @@ function Notifications() {
                         {relativeTime(notification.createdAt)}
                       </span>
                       {notification.isRead ? null : (
-                        <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-black text-secondary-900">
+                        <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-black text-on-primary">
                           New
                         </span>
                       )}

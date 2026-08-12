@@ -5,7 +5,7 @@ function WorkerCard({ worker }) {
   return (
     <article className="surface-panel grid gap-5 p-5 transition-transform duration-200 hover:-translate-y-1">
       <div className="flex items-center gap-4">
-        <div className="grid size-14 place-items-center rounded-full bg-primary text-lg font-black text-secondary-900">
+        <div className="grid size-14 place-items-center rounded-full bg-primary text-lg font-black text-on-primary">
           {worker.name
             .split(' ')
             .map((part) => part[0])
