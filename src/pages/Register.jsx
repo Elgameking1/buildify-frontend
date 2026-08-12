@@ -1,22 +1,35 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { Link } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import { apiErrorMessage } from '../services/api'
+import { authService } from '../services/authService'
+import { login as loginAction } from '../store/slices/authSlice'
 
 const roles = ['Client', 'Vendor', 'Worker']
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.email('Enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  // Mirrors the backend policy, so the user is told before the request is sent
+  // rather than after a 422 comes back.
+  password: z.string().min(10, 'Password must be at least 10 characters'),
   role: z.enum(roles, 'Choose a role'),
+  businessName: z.string().optional(),
 })
 
 function Register() {
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
     reset,
   } = useForm({
@@ -26,16 +39,27 @@ function Register() {
       email: '',
       password: '',
       role: '',
+      businessName: '',
     },
   })
 
-  const onSubmit = () => {
-    toast.success('Registration form validated')
-    reset()
+  const selectedRole = watch('role')
+
+  const onSubmit = async (values) => {
+    try {
+      const user = await authService.register(values)
+      dispatch(loginAction(user))
+      queryClient.clear()
+      reset()
+      toast.success(`Account created. Welcome, ${user.name.split(' ')[0]}`)
+      navigate('/', { replace: true })
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Could not create your account.'))
+    }
   }
 
   return (
-    <section className="page-container grid w-full items-center gap-10 py-12 lg:grid-cols-[1.1fr_0.9fr]">
+    <main className="page-container grid w-full items-center gap-10 section-spacing lg:grid-cols-[1.1fr_0.9fr]">
       <div className="surface-panel mx-auto w-full max-w-2xl p-6 sm:p-8">
         <div className="mb-8 grid gap-2">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary-700">
@@ -45,7 +69,7 @@ function Register() {
             Create your marketplace account
           </h1>
           <p className="text-steel">
-            Join as a client, vendor, or worker. No backend integration yet.
+            Join as a client, vendor, or worker.
           </p>
         </div>
 
@@ -123,6 +147,23 @@ function Register() {
             ) : null}
           </div>
 
+          {/* Required by the API for vendor accounts, so it is only asked for
+              when that role is chosen. */}
+          {selectedRole === 'Vendor' ? (
+            <div className="grid gap-2">
+              <label className="form-label" htmlFor="businessName">
+                Business name
+              </label>
+              <input
+                id="businessName"
+                type="text"
+                className="form-input"
+                placeholder="e.g. Mensah Building Supplies"
+                {...register('businessName')}
+              />
+            </div>
+          ) : null}
+
           <button type="submit" className="btn-primary min-h-12" disabled={isSubmitting}>
             Create Account
           </button>
@@ -145,8 +186,8 @@ function Register() {
             One account for buying, selling, or offering skilled labor.
           </h2>
           <p className="leading-7 text-secondary-100">
-            Role-based registration prepares the app for future marketplace
-            flows while staying frontend-only for now.
+            Your role decides which dashboard you get: an order history, a
+            product catalogue, or a queue of job requests.
           </p>
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -157,7 +198,7 @@ function Register() {
           ))}
         </div>
       </div>
-    </section>
+    </main>
   )
 }
 

@@ -1,5 +1,9 @@
+import { FiGrid } from 'react-icons/fi'
+
 function CategoryCard({ category }) {
-  const Icon = category.icon
+  // Categories from the API carry no icon - only the local marketing fixtures
+  // did - so fall back rather than crashing on an undefined component.
+  const Icon = category.icon ?? FiGrid
 
   return (
     <article className="surface-panel grid gap-4 p-5 transition-transform duration-200 hover:-translate-y-1">

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { FiPackage, FiTruck } from 'react-icons/fi'
+import { materialImage } from '../constants/materialImages'
 
 function ProductCard({ product }) {
   const price =
@@ -18,11 +19,12 @@ function ProductCard({ product }) {
 
   return (
     <article className="surface-panel overflow-hidden transition-transform duration-200 hover:-translate-y-1">
-      <div className="h-36 bg-secondary p-4">
-        <div className="h-full rounded-control border border-white/10 bg-white/10">
-          <div className="construction-stripe h-3 rounded-t-control" />
-        </div>
-      </div>
+      <img
+        src={materialImage(product)}
+        alt={product.name}
+        className="h-40 w-full bg-secondary object-cover"
+        loading="lazy"
+      />
       <div className="grid gap-4 p-5">
         <div className="flex items-center justify-between gap-3">
           <span className="rounded-full bg-accent-50 px-3 py-1 text-xs font-bold text-accent">

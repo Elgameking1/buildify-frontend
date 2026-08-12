@@ -1,3 +1,7 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
+import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import {
   FiBriefcase,
@@ -8,99 +12,187 @@ import {
   FiTrendingUp,
   FiUser,
 } from 'react-icons/fi'
+import { apiErrorMessage } from '../services/api'
+import { jobsService } from '../services/jobsService'
+import { ordersService } from '../services/ordersService'
 
-const overviewCards = [
-  {
-    id: 'orders',
-    label: 'Active Orders',
-    value: '4',
-    note: '2 arriving this week',
-    icon: FiShoppingCart,
-  },
-  {
-    id: 'hires',
-    label: 'Worker Hires',
-    value: '3',
-    note: '1 job starts tomorrow',
-    icon: FiBriefcase,
-  },
-  {
-    id: 'spend',
-    label: 'Monthly Spend',
-    value: 'GH₵8,420',
-    note: '+12% from last month',
-    icon: FiTrendingUp,
-  },
-  {
-    id: 'completed',
-    label: 'Completed Jobs',
-    value: '18',
-    note: 'Across materials and labor',
-    icon: FiCheckCircle,
-  },
-]
+const cedi = (amount) =>
+  `GH₵${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(amount ?? 0)}`
 
-const recentOrders = [
-  {
-    id: 'ORD-1024',
-    product: 'Premium Portland Cement',
-    vendor: 'Accra Build Supply',
-    status: 'In transit',
-    total: 'GH₵1,680',
-    date: 'Jul 2, 2026',
-  },
-  {
-    id: 'ORD-1023',
-    product: 'High-Tensile Rebar Bundle',
-    vendor: 'Tema Steel Works',
-    status: 'Processing',
-    total: 'GH₵2,520',
-    date: 'Jul 1, 2026',
-  },
-  {
-    id: 'ORD-1022',
-    product: 'Aluzinc Roofing Sheets',
-    vendor: 'North Ridge Roofing',
-    status: 'Delivered',
-    total: 'GH₵1,740',
-    date: 'Jun 29, 2026',
-  },
-]
+const shortDate = (value) =>
+  value
+    ? new Date(value).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '-'
 
-const recentHires = [
-  {
-    id: 'HIRE-304',
-    worker: 'Akua Serwaa',
-    role: 'Site Plumber',
-    status: 'Confirmed',
-    date: 'Jul 3, 2026',
-  },
-  {
-    id: 'HIRE-303',
-    worker: 'Daniel Mensah',
-    role: 'Masonry Specialist',
-    status: 'In progress',
-    date: 'Jul 1, 2026',
-  },
-  {
-    id: 'HIRE-302',
-    worker: 'Ama Owusu',
-    role: 'Licensed Electrician',
-    status: 'Completed',
-    date: 'Jun 27, 2026',
-  },
-]
-
-const profileSummary = {
-  name: 'Nana Adjei',
-  role: 'Client Account',
-  company: 'Adjei Developments',
-  location: 'Accra, Ghana',
-  email: 'nana@example.com',
-  completion: '82%',
-}
+const titleCase = (value) =>
+  String(value ?? '')
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/^./, (character) => character.toUpperCase())
 
 function Dashboard() {
+  const { user } = useSelector((state) => state.auth)
+
+  const { data: orderData } = useQuery({
+    queryKey: ['my-orders'],
+    queryFn: () => ordersService.getMyOrders({ size: 20 }),
+  })
+
+  const { data: jobData } = useQuery({
+    queryKey: ['my-jobs'],
+    queryFn: () => jobsService.getJobs({ role: 'sent', size: 20 }),
+  })
+
+  const orders = useMemo(() => orderData?.items ?? [], [orderData])
+  const jobs = useMemo(() => jobData?.items ?? [], [jobData])
+
+  const recentOrders = useMemo(
+    () =>
+      orders.slice(0, 5).map((order) => ({
+        id: order.reference,
+        product:
+          order.items.length === 1
+            ? order.items[0].name
+            : `${order.items.length} items`,
+        vendor: order.items[0]?.supplier ?? '-',
+        status: titleCase(order.status),
+        total: cedi(order.subtotal),
+        date: shortDate(order.placedAt),
+      })),
+    [orders],
+  )
+
+  const recentHires = useMemo(
+    () =>
+      jobs.slice(0, 5).map((job) => ({
+        id: `JOB-${job.id}`,
+        jobId: job.id,
+        worker: job.worker ?? 'Worker',
+        role: job.title,
+        status: titleCase(job.status),
+        rawStatus: job.status,
+        hasReview: job.hasReview,
+        date: shortDate(job.createdAt),
+      })),
+    [jobs],
+  )
+
+  const overviewCards = useMemo(() => {
+    const active = orders.filter(
+      (order) => order.status === 'PENDING' || order.status === 'CONFIRMED',
+    ).length
+    const spend = orders
+      .filter((order) => order.status !== 'CANCELLED')
+      .reduce((total, order) => total + order.subtotal, 0)
+    const openJobs = jobs.filter(
+      (job) => !['COMPLETED', 'CANCELLED', 'DECLINED'].includes(job.status),
+    ).length
+    const completed =
+      orders.filter((order) => order.status === 'FULFILLED').length +
+      jobs.filter((job) => job.status === 'COMPLETED').length
+
+    return [
+      {
+        id: 'orders',
+        label: 'Active Orders',
+        value: String(active),
+        note: `${orders.length} placed in total`,
+        icon: FiShoppingCart,
+      },
+      {
+        id: 'hires',
+        label: 'Worker Hires',
+        value: String(openJobs),
+        note: `${jobs.length} requests sent`,
+        icon: FiBriefcase,
+      },
+      {
+        id: 'spend',
+        label: 'Total Spend',
+        value: cedi(spend),
+        note: 'Excludes cancelled orders',
+        icon: FiTrendingUp,
+      },
+      {
+        id: 'completed',
+        label: 'Completed',
+        value: String(completed),
+        note: 'Across materials and labour',
+        icon: FiCheckCircle,
+      },
+    ]
+  }, [orders, jobs])
+
+  const queryClient = useQueryClient()
+  const [reviewFor, setReviewFor] = useState(null)
+  const [rating, setRating] = useState(5)
+  const [comment, setComment] = useState('')
+
+  const complete = useMutation({
+    mutationFn: (jobId) => jobsService.updateStatus(jobId, 'COMPLETED'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-jobs'] })
+      toast.success('Job marked complete - you can now leave a review')
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, 'Could not complete the job.')),
+  })
+
+  const review = useMutation({
+    mutationFn: ({ jobId, ...body }) => jobsService.leaveReview(jobId, body),
+    onSuccess: () => {
+      // The worker's rating is recalculated server-side, so refresh anything
+      // that shows it.
+      queryClient.invalidateQueries({ queryKey: ['my-jobs'] })
+      queryClient.invalidateQueries({ queryKey: ['workers'] })
+      setReviewFor(null)
+      setComment('')
+      setRating(5)
+      toast.success('Thanks for the review')
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, 'Could not save your review.')),
+  })
+
+  const profileSummary = {
+    name: user?.name ?? 'Client',
+    role: 'Client Account',
+    location: [user?.city, user?.region].filter(Boolean).join(', ') || 'No location set',
+    email: user?.email ?? '—',
+    phone: user?.phone || 'No phone number',
+  }
+
+  const initials = (profileSummary.name || '?')
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+
+  // Which contact fields are filled in - the same four the profile form edits.
+  const profileFields = [user?.name, user?.email, user?.phone, user?.city]
+  const completion = Math.round(
+    (profileFields.filter(Boolean).length / profileFields.length) * 100,
+  )
+
+  // Real, actionable items: jobs the client has to move on, plus an unfinished
+  // profile. The list used to be three hard-coded sentences.
+  const nextSteps = [
+    ...recentHires
+      .filter((hire) => hire.rawStatus === 'IN_PROGRESS')
+      .map((hire) => `Mark "${hire.role}" complete once ${hire.worker} has finished`),
+    ...recentHires
+      .filter((hire) => hire.rawStatus === 'COMPLETED' && !hire.hasReview)
+      .map((hire) => `Rate ${hire.worker} for "${hire.role}"`),
+    ...(completion < 100
+      ? ['Finish your profile so vendors can reach you about orders']
+      : []),
+  ]
+
+  const actionsNeeded = nextSteps.length
+
   return (
     <main className="w-full">
       <section className="bg-secondary text-white section-spacing">
@@ -113,14 +205,14 @@ function Dashboard() {
               Track your materials, worker hires, and project activity.
             </h1>
             <p className="max-w-2xl leading-7 text-secondary-100">
-              A frontend-only dashboard showing mock marketplace activity for a
-              construction client account.
+              Your orders, hires and the actions waiting on you.
             </p>
           </div>
+          {/* Counted from the jobs actually loaded, not a fixed "3 updates". */}
           <div className="surface-panel grid gap-1 p-5 text-secondary">
-            <span className="text-3xl font-black">Today</span>
+            <span className="text-3xl font-black">{actionsNeeded}</span>
             <span className="text-sm font-semibold text-steel">
-              3 updates need review
+              {actionsNeeded === 1 ? 'Item needs you' : 'Items need you'}
             </span>
           </div>
         </div>
@@ -164,12 +256,24 @@ function Dashboard() {
                     Material purchases
                   </h2>
                 </div>
-                <Link to="/materials" className="btn-secondary">
-                  Browse Materials
+                <Link to="/orders" className="btn-secondary">
+                  All Orders
                 </Link>
               </div>
 
-              <div className="hidden md:block">
+              {recentOrders.length === 0 ? (
+                <div className="grid gap-3 p-8 text-center">
+                  <p className="font-bold text-secondary">No orders yet</p>
+                  <p className="text-sm text-steel">
+                    Materials you order appear here with their fulfilment status.
+                  </p>
+                  <Link to="/materials" className="btn-primary mx-auto w-fit">
+                    Browse materials
+                  </Link>
+                </div>
+              ) : null}
+
+              <div className={recentOrders.length ? 'hidden md:block' : 'hidden'}>
                 <table className="w-full border-collapse text-left">
                   <thead className="bg-secondary-50 text-sm text-secondary">
                     <tr>
@@ -248,6 +352,12 @@ function Dashboard() {
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
+                {recentHires.length === 0 ? (
+                  <p className="text-steel lg:col-span-3">
+                    No hire requests yet. Find a worker and send one to get
+                    started.
+                  </p>
+                ) : null}
                 {recentHires.map((hire) => (
                   <article
                     key={hire.id}
@@ -274,6 +384,79 @@ function Dashboard() {
                       </span>
                       <span className="text-steel">{hire.date}</span>
                     </div>
+
+                    {/* Only the client may complete or review a job - the
+                        backend enforces it, and the UI mirrors it. */}
+                    {hire.rawStatus === 'IN_PROGRESS' ? (
+                      <button
+                        type="button"
+                        className="btn-primary mt-4 w-full px-3 py-2 text-sm"
+                        disabled={complete.isPending}
+                        onClick={() => complete.mutate(hire.jobId)}
+                      >
+                        Mark complete
+                      </button>
+                    ) : null}
+
+                    {hire.rawStatus === 'COMPLETED' && !hire.hasReview ? (
+                      reviewFor === hire.jobId ? (
+                        <form
+                          className="mt-4 grid gap-2"
+                          onSubmit={(event) => {
+                            event.preventDefault()
+                            review.mutate({ jobId: hire.jobId, rating, comment })
+                          }}
+                        >
+                          <select
+                            className="form-input"
+                            value={rating}
+                            onChange={(event) => setRating(Number(event.target.value))}
+                          >
+                            {[5, 4, 3, 2, 1].map((value) => (
+                              <option key={value} value={value}>
+                                {value} star{value === 1 ? '' : 's'}
+                              </option>
+                            ))}
+                          </select>
+                          <textarea
+                            className="form-input min-h-20 resize-y"
+                            placeholder="How did the work go?"
+                            value={comment}
+                            onChange={(event) => setComment(event.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              type="submit"
+                              className="btn-primary px-3 py-2 text-sm"
+                              disabled={review.isPending}
+                            >
+                              Submit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-secondary px-3 py-2 text-sm"
+                              onClick={() => setReviewFor(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-secondary mt-4 w-full px-3 py-2 text-sm"
+                          onClick={() => setReviewFor(hire.jobId)}
+                        >
+                          Leave a review
+                        </button>
+                      )
+                    ) : null}
+
+                    {hire.hasReview ? (
+                      <p className="mt-4 text-sm font-semibold text-accent">
+                        Review submitted
+                      </p>
+                    ) : null}
                   </article>
                 ))}
               </div>
@@ -284,7 +467,7 @@ function Dashboard() {
             <section className="surface-panel grid gap-5 p-6">
               <div className="flex items-center gap-4">
                 <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-black text-secondary-900">
-                  NA
+                  {initials}
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-secondary">
@@ -299,24 +482,27 @@ function Dashboard() {
               <div className="grid gap-3 text-sm text-steel">
                 <span className="inline-flex items-center gap-2">
                   <FiUser className="text-primary" aria-hidden="true" />
-                  {profileSummary.company}
+                  {profileSummary.email}
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <FiPackage className="text-primary" aria-hidden="true" />
                   {profileSummary.location}
                 </span>
-                <span>{profileSummary.email}</span>
+                <span>{profileSummary.phone}</span>
               </div>
 
+              {/* The bar and the percentage are the same number now - it used
+                  to print a dash beside a hard-coded 82% fill. */}
               <div className="grid gap-2">
                 <div className="flex items-center justify-between text-sm font-semibold">
                   <span className="text-steel">Profile completion</span>
-                  <span className="text-secondary">
-                    {profileSummary.completion}
-                  </span>
+                  <span className="text-secondary">{completion}%</span>
                 </div>
                 <div className="h-3 overflow-hidden rounded-full bg-secondary-100">
-                  <div className="h-full w-[82%] rounded-full bg-primary" />
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${completion}%` }}
+                  />
                 </div>
               </div>
 
@@ -328,24 +514,26 @@ function Dashboard() {
             <section className="surface-panel grid gap-4 p-6">
               <h2 className="text-xl font-black text-secondary">Next Steps</h2>
               <div className="grid gap-3">
-                {[
-                  'Confirm delivery address for cement order',
-                  'Review plumber hire request',
-                  'Complete account billing details',
-                ].map((task) => (
-                  <div
-                    key={task}
-                    className="flex items-start gap-3 rounded-control bg-secondary-50 p-3"
-                  >
-                    <FiCheckCircle
-                      className="mt-1 shrink-0 text-primary-700"
-                      aria-hidden="true"
-                    />
-                    <span className="text-sm font-semibold text-secondary">
-                      {task}
-                    </span>
-                  </div>
-                ))}
+                {nextSteps.length > 0 ? (
+                  nextSteps.map((task) => (
+                    <div
+                      key={task}
+                      className="flex items-start gap-3 rounded-control bg-secondary-50 p-3"
+                    >
+                      <FiCheckCircle
+                        className="mt-1 shrink-0 text-primary-700"
+                        aria-hidden="true"
+                      />
+                      <span className="text-sm font-semibold text-secondary">
+                        {task}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-steel">
+                    Nothing needs your attention right now.
+                  </p>
+                )}
               </div>
             </section>
           </aside>

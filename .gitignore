@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Local environment. .env.example is the committed template; the real file
+# never is - today it only holds an API URL, but that is exactly the file a
+# deploy key or analytics token ends up in later.
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

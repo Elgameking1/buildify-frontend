@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
+import { Link } from 'react-router-dom'
 import {
   FiBriefcase,
   FiCalendar,
@@ -9,115 +12,30 @@ import {
   FiToggleLeft,
   FiToggleRight,
   FiTrendingUp,
-  FiUserCheck,
 } from 'react-icons/fi'
+import { apiErrorMessage } from '../services/api'
+import { jobsService } from '../services/jobsService'
+import { workersService } from '../services/workersService'
 
-const dashboardStats = [
-  {
-    id: 'pending',
-    label: 'Pending Jobs',
-    value: '4',
-    note: 'Awaiting response',
-    icon: FiClock,
-  },
-  {
-    id: 'accepted',
-    label: 'Accepted Jobs',
-    value: '3',
-    note: 'Scheduled this week',
-    icon: FiUserCheck,
-  },
-  {
-    id: 'completed',
-    label: 'Completed Jobs',
-    value: '112',
-    note: '+6 this month',
-    icon: FiCheckCircle,
-  },
-  {
-    id: 'rating',
-    label: 'Average Rating',
-    value: '4.9',
-    note: 'Based on 48 reviews',
-    icon: FiStar,
-  },
-]
+const shortDate = (value) =>
+  value
+    ? new Date(value).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '-'
 
-const pendingJobs = [
-  {
-    id: 'JOB-501',
-    title: 'Boundary wall masonry',
-    client: 'Adjei Developments',
-    location: 'East Legon, Accra',
-    date: 'Jul 5, 2026',
-    budget: 'GH₵1,800',
-  },
-  {
-    id: 'JOB-502',
-    title: 'Retail shop plastering',
-    client: 'Urban Retail Group',
-    location: 'Osu, Accra',
-    date: 'Jul 7, 2026',
-    budget: 'GH₵1,250',
-  },
-]
+const cedi = (amount) =>
+  amount == null
+    ? 'Budget not set'
+    : `GH₵${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(amount)}`
 
-const acceptedJobs = [
-  {
-    id: 'JOB-493',
-    title: 'Apartment blockwork phase 2',
-    client: 'North Ridge Contractors',
-    location: 'Spintex, Accra',
-    date: 'Jul 2, 2026',
-    status: 'Starts tomorrow',
-  },
-  {
-    id: 'JOB-491',
-    title: 'Concrete repair and patching',
-    client: 'Tema Site Works',
-    location: 'Tema Community 12',
-    date: 'Jul 4, 2026',
-    status: 'Materials confirmed',
-  },
-  {
-    id: 'JOB-489',
-    title: 'Gatehouse wall construction',
-    client: 'Oakview Estates',
-    location: 'Amasaman',
-    date: 'Jul 8, 2026',
-    status: 'Site visit booked',
-  },
-]
-
-const completedJobs = [
-  {
-    id: 'JOB-472',
-    title: 'Warehouse partition blockwork',
-    client: 'Metro Logistics',
-    completed: 'Jun 28, 2026',
-    rating: 5,
-  },
-  {
-    id: 'JOB-468',
-    title: 'Residential plastering finish',
-    client: 'Esi Coleman',
-    completed: 'Jun 24, 2026',
-    rating: 4.8,
-  },
-  {
-    id: 'JOB-461',
-    title: 'Foundation block setting',
-    client: 'Greenline Homes',
-    completed: 'Jun 18, 2026',
-    rating: 4.9,
-  },
-]
-
-const ratingBreakdown = [
-  { label: '5 stars', value: '78%' },
-  { label: '4 stars', value: '18%' },
-  { label: '3 stars', value: '4%' },
-]
+const TRANSITION_MESSAGES = {
+  ACCEPTED: 'Job accepted',
+  DECLINED: 'Job declined',
+  IN_PROGRESS: 'Job started',
+}
 
 function JobCard({ job, children }) {
   return (
@@ -150,6 +68,151 @@ function JobCard({ job, children }) {
 
 function WorkerDashboard() {
   const [isAvailable, setIsAvailable] = useState(true)
+  const queryClient = useQueryClient()
+
+  // The backend scopes this to the signed-in worker, so there is nothing to
+  // filter for privacy on this side.
+  const { data: jobData } = useQuery({
+    queryKey: ['worker-jobs'],
+    queryFn: () => jobsService.getJobs({ role: 'received', size: 50 }),
+  })
+
+  const { data: profile } = useQuery({
+    queryKey: ['worker-me'],
+    queryFn: workersService.getMyProfile,
+  })
+
+  const jobs = useMemo(() => jobData?.items ?? [], [jobData])
+
+  const { pendingJobs, acceptedJobs, completedJobs } = useMemo(() => {
+    const toRow = (job) => ({
+      id: `JOB-${job.id}`,
+      title: job.title,
+      client: job.client ?? 'Client',
+      location: job.location,
+      date: shortDate(job.createdAt),
+      completed: shortDate(job.createdAt),
+      budget: cedi(job.budget),
+      // Whether *this* job was reviewed. It used to show the worker's overall
+      // average on every row, which read as a per-job score it never was.
+      hasReview: job.hasReview,
+      status: job.status,
+    })
+
+    return {
+      pendingJobs: jobs.filter((job) => job.status === 'PENDING').map(toRow),
+      acceptedJobs: jobs
+        .filter((job) => job.status === 'ACCEPTED' || job.status === 'IN_PROGRESS')
+        .map(toRow),
+      completedJobs: jobs.filter((job) => job.status === 'COMPLETED').map(toRow),
+    }
+    // `profile` is no longer read in here - the rows carry each job's own
+    // review flag rather than the worker's overall average.
+  }, [jobs])
+
+  const dashboardStats = [
+    {
+      id: 'pending',
+      label: 'Pending Requests',
+      value: String(pendingJobs.length),
+      note: 'Awaiting your response',
+      icon: FiClock,
+    },
+    {
+      id: 'active',
+      label: 'Active Jobs',
+      value: String(acceptedJobs.length),
+      note: 'Accepted or in progress',
+      icon: FiBriefcase,
+    },
+    {
+      id: 'completed',
+      label: 'Completed Jobs',
+      value: String(completedJobs.length),
+      note: 'Marked complete by clients',
+      icon: FiCheckCircle,
+    },
+    {
+      id: 'rating',
+      label: 'Average Rating',
+      value: profile?.rating ? Number(profile.rating).toFixed(1) : '-',
+      note: `${profile?.ratingCount ?? 0} reviews`,
+      icon: FiStar,
+    },
+  ]
+
+  const averageRating = Number(profile?.rating ?? 0)
+  const ratingCount = profile?.ratingCount ?? 0
+  const skillCount = profile?.skills?.length ?? 0
+
+  const initials = (profile?.name ?? '?')
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+
+  // Each metric carries its own scale, so the bar beside it means something:
+  // a rating out of 5, reviews against a first-ten milestone, skills against
+  // the number of trades the platform recognises.
+  const ratingBreakdown = [
+    {
+      label: 'Average rating',
+      display: ratingCount > 0 ? averageRating.toFixed(2) : '—',
+      percent: Math.min(100, (averageRating / 5) * 100),
+    },
+    {
+      label: 'Reviews received',
+      display: String(ratingCount),
+      percent: Math.min(100, ratingCount * 10),
+    },
+    {
+      label: 'Skills listed',
+      display: String(skillCount),
+      percent: Math.min(100, skillCount * 25),
+    },
+  ]
+
+  // The toggle used to be local state only, so it reverted on refresh. Seed it
+  // from the saved profile instead, then persist every change.
+  useEffect(() => {
+    if (profile?.availabilityStatus) {
+      setIsAvailable(profile.availabilityStatus === 'AVAILABLE')
+    }
+  }, [profile])
+
+  const transition = useMutation({
+    mutationFn: ({ jobId, status }) => jobsService.updateStatus(jobId, status),
+    onSuccess: (_job, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['worker-jobs'] })
+      toast.success(TRANSITION_MESSAGES[variables.status] ?? 'Job updated')
+    },
+    // A 409 means the state machine refused the move; a 403 means the wrong
+    // party attempted it. Both come back with a readable message.
+    onError: (error) => toast.error(apiErrorMessage(error, 'Could not update the job.')),
+  })
+
+  const availability = useMutation({
+    mutationFn: (status) => workersService.updateAvailability(status),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['worker-me'], updated)
+      toast.success(`Marked ${updated.availability.toLowerCase()}`)
+    },
+    onError: (error) => {
+      setIsAvailable((current) => !current) // put the switch back
+      toast.error(apiErrorMessage(error, 'Could not update availability.'))
+    },
+  })
+
+  const toggleAvailability = () => {
+    const next = !isAvailable
+    setIsAvailable(next)
+    availability.mutate(next ? 'AVAILABLE' : 'UNAVAILABLE')
+  }
+
+  // `jobId` strips the "JOB-" prefix the rows display.
+  const act = (rowId, status) =>
+    transition.mutate({ jobId: String(rowId).replace('JOB-', ''), status })
 
   return (
     <main className="w-full">
@@ -163,7 +226,7 @@ function WorkerDashboard() {
               Manage job requests, bookings, and performance.
             </h1>
             <p className="max-w-2xl leading-7 text-secondary-100">
-              Mock worker workspace for tracking pending jobs, accepted work,
+              Your workspace for tracking pending jobs, accepted work,
               completed jobs, ratings, and availability.
             </p>
           </div>
@@ -180,7 +243,8 @@ function WorkerDashboard() {
             <button
               type="button"
               className={isAvailable ? 'btn-primary' : 'btn-secondary'}
-              onClick={() => setIsAvailable((current) => !current)}
+              onClick={toggleAvailability}
+              disabled={availability.isPending}
             >
               {isAvailable ? (
                 <FiToggleRight aria-hidden="true" />
@@ -236,11 +300,34 @@ function WorkerDashboard() {
                 </span>
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
+                {pendingJobs.length === 0 ? (
+                  <p className="text-steel">No new requests right now.</p>
+                ) : null}
                 {pendingJobs.map((job) => (
                   <JobCard key={job.id} job={job}>
-                    <span className="font-black text-secondary">
-                      {job.budget}
-                    </span>
+                    <div className="grid justify-items-end gap-2">
+                      <span className="font-black text-secondary">
+                        {job.budget}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          className="btn-primary px-3 py-1 text-sm"
+                          disabled={transition.isPending}
+                          onClick={() => act(job.id, 'ACCEPTED')}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary px-3 py-1 text-sm"
+                          disabled={transition.isPending}
+                          onClick={() => act(job.id, 'DECLINED')}
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </div>
                   </JobCard>
                 ))}
               </div>
@@ -256,11 +343,32 @@ function WorkerDashboard() {
                 </h2>
               </div>
               <div className="grid gap-4 lg:grid-cols-3">
+                {acceptedJobs.length === 0 ? (
+                  <p className="text-steel">No confirmed work yet.</p>
+                ) : null}
                 {acceptedJobs.map((job) => (
                   <JobCard key={job.id} job={job}>
-                    <span className="rounded-full bg-accent-50 px-3 py-1 text-xs font-bold text-accent">
-                      {job.status}
-                    </span>
+                    <div className="grid justify-items-end gap-2">
+                      <span className="rounded-full bg-accent-50 px-3 py-1 text-xs font-bold text-accent">
+                        {job.status.replace('_', ' ')}
+                      </span>
+                      {/* Only the worker may start a job; completion is the
+                          client's call, so no "complete" button here. */}
+                      {job.status === 'ACCEPTED' ? (
+                        <button
+                          type="button"
+                          className="btn-primary px-3 py-1 text-sm"
+                          disabled={transition.isPending}
+                          onClick={() => act(job.id, 'IN_PROGRESS')}
+                        >
+                          Start job
+                        </button>
+                      ) : (
+                        <span className="text-xs font-semibold text-steel">
+                          Awaiting client sign-off
+                        </span>
+                      )}
+                    </div>
                   </JobCard>
                 ))}
               </div>
@@ -283,10 +391,18 @@ function WorkerDashboard() {
                       <th className="p-4 font-bold">Job</th>
                       <th className="p-4 font-bold">Client</th>
                       <th className="p-4 font-bold">Completed</th>
-                      <th className="p-4 font-bold">Rating</th>
+                      <th className="p-4 font-bold">Review</th>
                     </tr>
                   </thead>
                   <tbody>
+                    {completedJobs.length === 0 ? (
+                      <tr className="border-t border-concrete">
+                        <td className="p-4 text-steel" colSpan={4}>
+                          No completed jobs yet. A job appears here once the
+                          client marks it complete.
+                        </td>
+                      </tr>
+                    ) : null}
                     {completedJobs.map((job) => (
                       <tr key={job.id} className="border-t border-concrete">
                         <td className="p-4">
@@ -300,10 +416,16 @@ function WorkerDashboard() {
                           {job.completed}
                         </td>
                         <td className="p-4">
-                          <span className="inline-flex items-center gap-2 font-bold text-primary-700">
-                            <FiStar aria-hidden="true" />
-                            {job.rating}
-                          </span>
+                          {job.hasReview ? (
+                            <span className="inline-flex items-center gap-2 font-bold text-primary-700">
+                              <FiStar aria-hidden="true" />
+                              Reviewed
+                            </span>
+                          ) : (
+                            <span className="text-sm text-steel">
+                              Awaiting review
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -322,9 +444,9 @@ function WorkerDashboard() {
                         <p className="font-bold text-secondary">{job.title}</p>
                         <p className="text-sm text-steel">{job.client}</p>
                       </div>
-                      <span className="inline-flex items-center gap-1 font-bold text-primary-700">
+                      <span className="inline-flex items-center gap-1 text-sm font-bold text-primary-700">
                         <FiStar aria-hidden="true" />
-                        {job.rating}
+                        {job.hasReview ? 'Reviewed' : 'Awaiting review'}
                       </span>
                     </div>
                     <p className="mt-3 text-sm text-steel">{job.completed}</p>
@@ -335,17 +457,20 @@ function WorkerDashboard() {
           </div>
 
           <aside className="grid gap-5">
+            {/* This panel used to be a hard-coded "Daniel Mensah, Masonry
+                Specialist, 128 projects, GH₵180/day" regardless of who was
+                signed in. It is the signed-in worker's own profile now. */}
             <section className="surface-panel grid gap-5 p-6">
               <div className="flex items-center gap-4">
                 <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-black text-secondary-900">
-                  DM
+                  {initials}
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-secondary">
-                    Daniel Mensah
+                    {profile?.name ?? 'Your profile'}
                   </h2>
                   <p className="text-sm font-semibold text-steel">
-                    Masonry Specialist
+                    {profile?.role ?? 'Skilled worker'}
                   </p>
                 </div>
               </div>
@@ -353,17 +478,33 @@ function WorkerDashboard() {
               <div className="grid gap-3 text-sm text-steel">
                 <span className="inline-flex items-center gap-2">
                   <FiMapPin className="text-primary" aria-hidden="true" />
-                  Accra, Ghana
+                  {profile?.location ?? 'No location set'}
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <FiBriefcase className="text-primary" aria-hidden="true" />
-                  128 projects
+                  {completedJobs.length}{' '}
+                  {completedJobs.length === 1 ? 'completed job' : 'completed jobs'}
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <FiTrendingUp className="text-primary" aria-hidden="true" />
-                  GH₵180/day
+                  {profile?.rate ?? 'Day rate not set'}
                 </span>
               </div>
+
+              <div className="flex flex-wrap gap-2">
+                {(profile?.skills ?? []).map((skill) => (
+                  <span
+                    key={skill}
+                    className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+
+              <Link to="/profile" className="btn-secondary w-fit">
+                Edit profile
+              </Link>
             </section>
 
             <section className="surface-panel grid gap-5 p-6">
@@ -377,23 +518,30 @@ function WorkerDashboard() {
               </div>
 
               <div className="flex items-end gap-3">
-                <span className="text-5xl font-black text-secondary">4.9</span>
+                <span className="text-5xl font-black text-secondary">
+                  {ratingCount > 0 ? averageRating.toFixed(1) : '—'}
+                </span>
                 <span className="pb-2 text-sm font-semibold text-steel">
-                  average rating
+                  {ratingCount > 0
+                    ? `from ${ratingCount} ${ratingCount === 1 ? 'review' : 'reviews'}`
+                    : 'not yet rated'}
                 </span>
               </div>
 
+              {/* Bars are a fraction of a known maximum. They previously took
+                  their width straight from the value - style={{width: '5.00'}}
+                  is not a length, so none of them rendered. */}
               <div className="grid gap-3">
-                {ratingBreakdown.map((rating) => (
-                  <div key={rating.label} className="grid gap-2">
+                {ratingBreakdown.map((metric) => (
+                  <div key={metric.label} className="grid gap-2">
                     <div className="flex items-center justify-between text-sm font-semibold">
-                      <span className="text-steel">{rating.label}</span>
-                      <span className="text-secondary">{rating.value}</span>
+                      <span className="text-steel">{metric.label}</span>
+                      <span className="text-secondary">{metric.display}</span>
                     </div>
                     <div className="h-3 overflow-hidden rounded-full bg-secondary-100">
                       <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: rating.value }}
+                        className="h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${metric.percent}%` }}
                       />
                     </div>
                   </div>

@@ -8,10 +8,15 @@ import {
   FiShoppingCart,
   FiTruck,
 } from 'react-icons/fi'
+import { useQuery } from '@tanstack/react-query'
 import ProductCard from '../components/ProductCard'
 import SectionHeader from '../components/SectionHeader'
-import { materials } from '../constants/materialsData'
+import {
+  materialImageCredit,
+  materialImages,
+} from '../constants/materialImages'
 import { useCart } from '../hooks/useCart'
+import { productsService } from '../services/productsService'
 
 function formatCedi(amount) {
   return `GH₵${new Intl.NumberFormat('en-US', {
@@ -21,25 +26,38 @@ function formatCedi(amount) {
 
 function MaterialDetails() {
   const { id } = useParams()
-  const product = materials.find((material) => material.id === id)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
-  const [cartMessage, setCartMessage] = useState('')
-  const { addItem } = useCart()
+  const { addItem, isPending } = useCart()
 
-  const relatedProducts = useMemo(() => {
-    if (!product) {
-      return []
-    }
+  const { data: product, isLoading } = useQuery({
+    queryKey: ['product', id],
+    queryFn: () => productsService.getProductById(id),
+    enabled: Boolean(id),
+    retry: false,
+  })
 
-    const sameCategory = materials.filter(
-      (material) =>
-        material.category === product.category && material.id !== product.id,
+  // "Related" is the rest of the same category, fetched once the product is
+  // known so we have a category id to filter on.
+  const { data: related } = useQuery({
+    queryKey: ['product-related', product?.categoryId, product?.id],
+    queryFn: () =>
+      productsService.getProducts({ categoryId: product.categoryId, size: 4 }),
+    enabled: Boolean(product?.categoryId),
+  })
+
+  const relatedProducts = useMemo(
+    () => (related?.items ?? []).filter((item) => item.id !== product?.id).slice(0, 3),
+    [related, product],
+  )
+
+  if (isLoading) {
+    return (
+      <main className="page-container grid gap-6 section-spacing">
+        <div className="surface-panel h-96 animate-pulse bg-concrete/40" />
+      </main>
     )
-    const fallback = materials.filter((material) => material.id !== product.id)
-
-    return (sameCategory.length > 0 ? sameCategory : fallback).slice(0, 3)
-  }, [product])
+  }
 
   if (!product) {
     return (
@@ -53,14 +71,19 @@ function MaterialDetails() {
             Product not found
           </h1>
           <p className="text-steel">
-            The mock product you are looking for is not available.
+            This listing may have been archived by the vendor, or the link may be
+            out of date.
           </p>
         </div>
       </main>
     )
   }
 
-  const selectedImage = product.gallery[selectedImageIndex]
+  // The vendor's uploads if there are any, otherwise a library photo of the
+  // material - see src/constants/materialImages.js.
+  const gallery = materialImages(product)
+  const selectedImage = gallery[selectedImageIndex] ?? gallery[0]
+  const credit = materialImageCredit(selectedImage)
   const canIncreaseQuantity = quantity < product.stock
 
   return (
@@ -74,41 +97,68 @@ function MaterialDetails() {
         <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
           <div className="grid gap-4">
             <div className="surface-panel overflow-hidden">
-              <div className="grid min-h-96 place-items-center bg-secondary p-8 text-center text-white">
-                <div className="grid gap-5">
-                  <div className="mx-auto size-32 rounded-panel border border-white/10 bg-white/10 p-4">
-                    <div className="construction-stripe h-full rounded-control" />
-                  </div>
-                  <div className="grid gap-2">
-                    <span className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
-                      {product.category}
-                    </span>
-                    <h2 className="text-3xl font-black">{selectedImage}</h2>
-                    <p className="text-secondary-100">{product.name}</p>
-                  </div>
-                </div>
-              </div>
+              <img
+                src={selectedImage}
+                alt={product.name}
+                className="h-96 w-full bg-secondary object-cover"
+                loading="lazy"
+              />
+              {credit ? (
+                // Not the vendor's stock, and the licences these photos carry
+                // require the credit - so say both, quietly.
+                <p className="border-t border-concrete px-4 py-2 text-xs text-steel">
+                  Library photo of this material, not the vendor's stock ·{' '}
+                  <a
+                    href={credit.source}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="underline hover:text-secondary"
+                  >
+                    {credit.title}
+                  </a>{' '}
+                  by {credit.author},{' '}
+                  {credit.licenseUrl ? (
+                    <a
+                      href={credit.licenseUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="underline hover:text-secondary"
+                    >
+                      {credit.license}
+                    </a>
+                  ) : (
+                    credit.license
+                  )}
+                </p>
+              ) : null}
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              {product.gallery.map((image, index) => (
-                <button
-                  key={image}
-                  type="button"
-                  className={`rounded-panel border p-3 text-left transition-colors ${
-                    selectedImageIndex === index
-                      ? 'border-primary bg-primary-50 text-secondary'
-                      : 'border-concrete bg-white text-steel hover:border-primary'
-                  }`}
-                  onClick={() => setSelectedImageIndex(index)}
-                >
-                  <span className="block h-16 rounded-control bg-secondary p-2">
-                    <span className="construction-stripe block h-full rounded-control" />
-                  </span>
-                  <span className="mt-3 block text-sm font-bold">{image}</span>
-                </button>
-              ))}
-            </div>
+            {gallery.length > 1 ? (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {gallery.map((image, index) => (
+                  <button
+                    key={image}
+                    type="button"
+                    className={`overflow-hidden rounded-panel border transition-colors ${
+                      selectedImageIndex === index
+                        ? 'border-primary ring-2 ring-primary/30'
+                        : 'border-concrete hover:border-primary'
+                    }`}
+                    onClick={() => setSelectedImageIndex(index)}
+                  >
+                    <span className="sr-only">
+                      Show image {index + 1} of {gallery.length}
+                    </span>
+                    <img
+                      src={image}
+                      alt=""
+                      className="h-24 w-full bg-secondary object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <article className="surface-panel grid gap-6 p-6 lg:p-8">
@@ -186,23 +236,18 @@ function MaterialDetails() {
               </div>
             </div>
 
+            {/* Confirmation comes from the cart itself, which is the only side
+                that knows whether the line was actually accepted - the button
+                used to claim success even when the request was refused. */}
             <button
               type="button"
               className="btn-primary min-h-12"
-              onClick={() => {
-                addItem(product, quantity)
-                setCartMessage(`${quantity} ${product.name} added to cart.`)
-              }}
+              disabled={product.stock === 0 || isPending}
+              onClick={() => addItem(product, quantity)}
             >
               <FiShoppingCart aria-hidden="true" />
-              Add to Cart
+              {product.stock === 0 ? 'Out of stock' : 'Add to Cart'}
             </button>
-
-            {cartMessage ? (
-              <p className="rounded-control bg-accent-50 px-4 py-3 text-sm font-semibold text-accent">
-                {cartMessage}
-              </p>
-            ) : null}
           </article>
         </div>
       </section>
@@ -212,7 +257,7 @@ function MaterialDetails() {
           <SectionHeader
             eyebrow="Related Products"
             title="Keep comparing materials for the same project."
-            description="Mock recommendations based on category first, then other available materials."
+            description="Other listings in the same category."
           />
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {relatedProducts.map((relatedProduct) => (

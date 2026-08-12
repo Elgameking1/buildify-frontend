@@ -1,4 +1,7 @@
-import { Link } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import toast from 'react-hot-toast'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   FiMinus,
   FiPlus,
@@ -6,7 +9,10 @@ import {
   FiTrash2,
   FiTruck,
 } from 'react-icons/fi'
+import { materialImage } from '../constants/materialImages'
 import { useCart } from '../hooks/useCart'
+import { apiErrorMessage } from '../services/api'
+import { ordersService } from '../services/ordersService'
 
 function formatCedi(amount) {
   return `GH₵${new Intl.NumberFormat('en-US', {
@@ -52,8 +58,40 @@ function Cart() {
     updateQuantity,
   } = useCart()
 
-  const deliveryEstimate = subtotal > 0 ? 25 : 0
-  const orderTotal = subtotal + deliveryEstimate
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+
+  const checkout = useMutation({
+    mutationFn: ordersService.placeOrder,
+    onSuccess: (order) => {
+      // Checkout empties the cart server-side, so refetch rather than guess.
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      toast.success(`Order ${order.reference} placed`)
+      // Straight to the order history, where the new order and each vendor's
+      // progress on it are visible.
+      navigate('/orders')
+    },
+    onError: (error) => {
+      // A 409 here is the backend refusing to oversell - the stock ran out
+      // between browsing and checking out.
+      toast.error(apiErrorMessage(error, 'Could not place your order.'))
+    },
+  })
+
+  const handleCheckout = (event) => {
+    event.preventDefault()
+    checkout.mutate({ deliveryAddress, contactPhone })
+  }
+
+  const isPlacingOrder = checkout.isPending
+  // There is no delivery fee to show. This used to add a flat GH₵25 "estimated
+  // delivery" to the total, which no part of the system charges - the order the
+  // backend creates is the subtotal, and delivery is settled with each vendor
+  // directly. A total the invoice disagrees with is worse than no total.
+  const orderTotal = subtotal
 
   const getItemClassName = (productId) =>
     `surface-panel p-4 transition-all duration-300 ${
@@ -75,8 +113,8 @@ function Cart() {
                 Review your material order.
               </h1>
               <p className="max-w-2xl leading-7 text-secondary-100">
-                Mock cart state lets you adjust quantities, remove products, and
-                confirm the running subtotal before checkout is connected.
+                Adjust quantities, remove products, and confirm the subtotal
+                before placing your order. Stock is re-checked at checkout.
               </p>
             </div>
             <div className="surface-panel grid gap-1 p-5 text-secondary">
@@ -122,9 +160,12 @@ function Cart() {
                     >
                       <td className="p-4">
                         <div className="flex items-center gap-4">
-                          <div className="grid size-16 place-items-center rounded-control bg-secondary p-2">
-                            <div className="construction-stripe size-full rounded-control" />
-                          </div>
+                          <img
+                            src={materialImage(item.product)}
+                            alt=""
+                            className="size-16 shrink-0 rounded-control bg-secondary object-cover"
+                            loading="lazy"
+                          />
                           <div>
                             <Link
                               to={`/materials/${item.product.id}`}
@@ -179,9 +220,12 @@ function Cart() {
                 >
                   <div className="grid gap-4">
                     <div className="flex gap-4">
-                      <div className="grid size-20 shrink-0 place-items-center rounded-control bg-secondary p-2">
-                        <div className="construction-stripe size-full rounded-control" />
-                      </div>
+                      <img
+                        src={materialImage(item.product)}
+                        alt=""
+                        className="size-20 shrink-0 rounded-control bg-secondary object-cover"
+                        loading="lazy"
+                      />
                       <div className="grid gap-1">
                         <Link
                           to={`/materials/${item.product.id}`}
@@ -236,7 +280,7 @@ function Cart() {
                 Your cart is empty
               </h2>
               <p className="text-steel">
-                Add mock materials from the catalog to build a sample order.
+                Add materials from the catalogue to start an order.
               </p>
             </div>
             <Link to="/materials" className="btn-primary mx-auto">
@@ -251,7 +295,7 @@ function Cart() {
               Order Summary
             </h2>
             <p className="text-sm text-steel">
-              Mock totals for frontend checkout planning.
+              Delivery is arranged directly with each supplier.
             </p>
           </div>
 
@@ -265,10 +309,10 @@ function Cart() {
             <div className="flex items-center justify-between gap-3">
               <span className="inline-flex items-center gap-2 text-steel">
                 <FiTruck aria-hidden="true" />
-                Estimated delivery
+                Delivery
               </span>
-              <span className="font-bold text-secondary">
-                {formatCedi(deliveryEstimate)}
+              <span className="font-semibold text-steel">
+                Quoted by each vendor
               </span>
             </div>
           </div>
@@ -280,9 +324,37 @@ function Cart() {
             </span>
           </div>
 
-          <button type="button" className="btn-primary min-h-12">
-            Continue to Checkout
-          </button>
+          <form className="grid gap-3" onSubmit={handleCheckout}>
+            <label className="grid gap-1">
+              <span className="form-label">Delivery address</span>
+              <input
+                className="form-input"
+                required
+                minLength={5}
+                placeholder="12 Independence Avenue, Accra"
+                value={deliveryAddress}
+                onChange={(event) => setDeliveryAddress(event.target.value)}
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className="form-label">Contact phone</span>
+              <input
+                className="form-input"
+                required
+                minLength={7}
+                placeholder="0244000000"
+                value={contactPhone}
+                onChange={(event) => setContactPhone(event.target.value)}
+              />
+            </label>
+            <button
+              type="submit"
+              className="btn-primary min-h-12"
+              disabled={isPlacingOrder || items.length === 0}
+            >
+              {isPlacingOrder ? 'Placing order…' : 'Place Order'}
+            </button>
+          </form>
           <Link to="/materials" className="btn-secondary">
             Add more materials
           </Link>

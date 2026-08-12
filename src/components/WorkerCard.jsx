@@ -18,11 +18,15 @@ function WorkerCard({ worker }) {
       </div>
       <div className="grid gap-3 text-sm text-steel">
         <div className="flex items-center justify-between gap-3">
+          {/* An unrated worker shows "New", not a 0.0 that reads as a bad
+              score - nobody has rated them either way. */}
           <span className="inline-flex items-center gap-2">
             <FiStar className="text-primary" aria-hidden="true" />
-            {worker.rating} rating
+            {worker.ratingCount > 0
+              ? `${worker.rating.toFixed(1)} rating`
+              : 'New to the marketplace'}
           </span>
-          <span>{worker.projects}</span>
+          {worker.ratingCount > 0 ? <span>{worker.projects}</span> : null}
         </div>
         <span className="inline-flex items-center gap-2">
           <FiMapPin aria-hidden="true" />

@@ -9,11 +9,26 @@ import {
   FiStar,
   FiUserCheck,
 } from 'react-icons/fi'
-import { workers } from '../constants/workersData'
+import { useQuery } from '@tanstack/react-query'
+import { workersService } from '../services/workersService'
 
 function WorkerDetails() {
   const { id } = useParams()
-  const worker = workers.find((item) => item.id === id)
+
+  const { data: worker, isLoading } = useQuery({
+    queryKey: ['worker', id],
+    queryFn: () => workersService.getWorkerById(id),
+    enabled: Boolean(id),
+    retry: false,
+  })
+
+  if (isLoading) {
+    return (
+      <main className="page-container grid gap-6 section-spacing">
+        <div className="surface-panel h-96 animate-pulse bg-concrete/40" />
+      </main>
+    )
+  }
 
   if (!worker) {
     return (
@@ -27,7 +42,7 @@ function WorkerDetails() {
             Worker not found
           </h1>
           <p className="text-steel">
-            The mock worker profile you are looking for is not available.
+            The worker profile you are looking for is not available.
           </p>
         </div>
       </main>
@@ -79,9 +94,11 @@ function WorkerDetails() {
             </div>
 
             <div className="surface-panel grid gap-2 p-5 text-secondary">
-              <span className="text-3xl font-black">{worker.rate}</span>
+              <span className="text-3xl font-black">
+                {worker.rate ?? 'On request'}
+              </span>
               <span className="text-sm font-semibold text-steel">
-                Mock day rate
+                {worker.rate ? 'Day rate' : 'Day rate not published'}
               </span>
             </div>
           </div>
@@ -102,7 +119,9 @@ function WorkerDetails() {
               </span>
               <span className="inline-flex items-center gap-2">
                 <FiStar className="text-primary" aria-hidden="true" />
-                {worker.rating} average rating
+                {worker.ratingCount > 0
+                  ? `${worker.rating.toFixed(1)} average rating`
+                  : 'Not yet rated'}
               </span>
               <span className="inline-flex items-center gap-2">
                 <FiBriefcase className="text-primary" aria-hidden="true" />
@@ -126,14 +145,20 @@ function WorkerDetails() {
           <div className="surface-panel grid gap-4 p-6">
             <h2 className="text-2xl font-black text-secondary">Skills</h2>
             <div className="flex flex-wrap gap-2">
-              {worker.skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="rounded-full bg-primary-50 px-3 py-2 text-sm font-bold text-primary-700"
-                >
-                  {skill}
+              {worker.skills.length > 0 ? (
+                worker.skills.map((skill) => (
+                  <span
+                    key={skill}
+                    className="rounded-full bg-primary-50 px-3 py-2 text-sm font-bold text-primary-700"
+                  >
+                    {skill}
+                  </span>
+                ))
+              ) : (
+                <span className="text-sm text-steel">
+                  This worker has not listed any skills yet.
                 </span>
-              ))}
+              )}
             </div>
           </div>
         </aside>
@@ -154,10 +179,13 @@ function WorkerDetails() {
               </div>
             </div>
             <p className="leading-7 text-steel">
-              {worker.name} has completed {worker.projects.toLowerCase()} with
-              a focus on {worker.profession.toLowerCase()} work, coordination
-              with site supervisors, and dependable delivery on active
-              construction schedules.
+              {worker.experience} on site, working mainly in{' '}
+              {worker.profession.toLowerCase()}.{' '}
+              {worker.ratingCount > 0
+                ? `${worker.ratingCount} ${
+                    worker.ratingCount === 1 ? 'client has' : 'clients have'
+                  } rated the finished work.`
+                : 'No completed jobs have been rated through the marketplace yet.'}
             </p>
           </section>
 
@@ -171,24 +199,34 @@ function WorkerDetails() {
                   Completed Jobs
                 </span>
                 <h2 className="text-2xl font-black text-secondary">
-                  Recent mock project history
+                  Recent project history
                 </h2>
               </div>
             </div>
-            <div className="grid gap-3">
-              {worker.completedJobs.map((job) => (
-                <div
-                  key={job}
-                  className="flex items-start gap-3 rounded-control bg-secondary-50 p-4"
-                >
-                  <FiCheckCircle
-                    className="mt-1 shrink-0 text-primary-700"
-                    aria-hidden="true"
-                  />
-                  <span className="font-semibold text-secondary">{job}</span>
-                </div>
-              ))}
-            </div>
+            {/* Derived from the jobs that produced a review - the API has no
+                separate "completed jobs" list, and inventing one would be the
+                easiest number on the page to fake. */}
+            {worker.completedJobs.length > 0 ? (
+              <div className="grid gap-3">
+                {worker.completedJobs.map((job) => (
+                  <div
+                    key={job}
+                    className="flex items-start gap-3 rounded-control bg-secondary-50 p-4"
+                  >
+                    <FiCheckCircle
+                      className="mt-1 shrink-0 text-primary-700"
+                      aria-hidden="true"
+                    />
+                    <span className="font-semibold text-secondary">{job}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-control bg-secondary-50 p-4 text-steel">
+                No reviewed jobs yet. Project history appears here once a client
+                marks a job complete and rates it.
+              </p>
+            )}
           </section>
 
           <section className="grid gap-5">
@@ -205,6 +243,13 @@ function WorkerDetails() {
                 </h2>
               </div>
             </div>
+
+            {worker.reviews.length === 0 ? (
+              <p className="surface-panel p-6 text-steel">
+                No reviews yet. Only a client whose job was completed can leave
+                one, so this stays empty until then.
+              </p>
+            ) : null}
 
             <div className="grid gap-4 md:grid-cols-2">
               {worker.reviews.map((review) => (

@@ -1,7 +1,21 @@
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { FiArrowRight, FiSearch } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
 
 function HeroSection() {
+  const navigate = useNavigate()
+  const [term, setTerm] = useState('')
+
+  // The box searches materials, which is where a keyword search has an index
+  // behind it. Handing the term over as ?q= means the results page owns the
+  // query and a search can be linked to or reloaded.
+  const handleSearch = (event) => {
+    event.preventDefault()
+    const query = term.trim()
+    navigate(query ? `/materials?q=${encodeURIComponent(query)}` : '/materials')
+  }
+
   return (
     <section className="page-container grid items-center gap-10 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:py-20">
       <motion.div
@@ -24,14 +38,19 @@ function HeroSection() {
           </p>
         </div>
 
-        <form className="surface-panel flex w-full max-w-2xl flex-col gap-3 p-2 sm:flex-row">
+        <form
+          className="surface-panel flex w-full max-w-2xl flex-col gap-3 p-2 sm:flex-row"
+          onSubmit={handleSearch}
+        >
           <label className="flex flex-1 items-center gap-3 rounded-control bg-secondary-50 px-4 py-3 text-steel">
             <FiSearch className="shrink-0" aria-hidden="true" />
-            <span className="sr-only">Search marketplace</span>
+            <span className="sr-only">Search materials</span>
             <input
               type="search"
               className="w-full bg-transparent text-secondary outline-none placeholder:text-steel"
-              placeholder="Search materials or workers"
+              placeholder="Search materials, e.g. cement or roofing"
+              value={term}
+              onChange={(event) => setTerm(event.target.value)}
             />
           </label>
           <button type="submit" className="btn-primary min-h-12 px-6">

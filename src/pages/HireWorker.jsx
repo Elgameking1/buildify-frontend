@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQuery } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { z } from 'zod'
 import {
   FiArrowLeft,
@@ -11,7 +12,9 @@ import {
   FiSend,
   FiStar,
 } from 'react-icons/fi'
-import { workers } from '../constants/workersData'
+import { apiErrorMessage } from '../services/api'
+import { jobsService } from '../services/jobsService'
+import { workersService } from '../services/workersService'
 
 const hireWorkerSchema = z.object({
   jobTitle: z.string().min(3, 'Job title must be at least 3 characters'),
@@ -31,8 +34,15 @@ const hireWorkerSchema = z.object({
 
 function HireWorker() {
   const { id } = useParams()
-  const worker = workers.find((item) => item.id === id)
+  const navigate = useNavigate()
   const today = new Date().toISOString().split('T')[0]
+
+  const { data: worker, isLoading } = useQuery({
+    queryKey: ['worker', id],
+    queryFn: () => workersService.getWorkerById(id),
+    enabled: Boolean(id),
+    retry: false,
+  })
 
   const {
     register,
@@ -50,9 +60,32 @@ function HireWorker() {
     },
   })
 
-  const onSubmit = () => {
-    toast.success(`Hire request prepared for ${worker.name}`)
-    reset()
+  const onSubmit = async (values) => {
+    try {
+      await jobsService.hireWorker({
+        workerId: worker.id,
+        title: values.jobTitle,
+        description: values.description,
+        location: values.address,
+        budget: values.budget || undefined,
+        startDate: values.date || undefined,
+      })
+      reset()
+      toast.success(`Job request sent to ${worker.name}`)
+      navigate('/dashboard')
+    } catch (error) {
+      // 403 here means the account is not a CLIENT; the backend only lets
+      // clients raise job requests.
+      toast.error(apiErrorMessage(error, 'Could not send the job request.'))
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <main className="page-container grid gap-6 section-spacing">
+        <div className="surface-panel h-96 animate-pulse bg-concrete/40" />
+      </main>
+    )
   }
 
   if (!worker) {
@@ -67,7 +100,7 @@ function HireWorker() {
             Worker not found
           </h1>
           <p className="text-steel">
-            The mock worker you want to hire is not available.
+            The worker you want to hire is not available.
           </p>
         </div>
       </main>
@@ -111,11 +144,13 @@ function HireWorker() {
               </span>
               <span className="inline-flex items-center gap-2">
                 <FiStar className="text-primary" aria-hidden="true" />
-                {worker.rating} rating
+                {worker.ratingCount > 0
+                  ? `${worker.rating.toFixed(1)} rating`
+                  : 'Not yet rated'}
               </span>
               <span className="inline-flex items-center gap-2">
                 <FiBriefcase className="text-primary" aria-hidden="true" />
-                {worker.rate}
+                {worker.rate ?? 'Day rate on request'}
               </span>
               <p className="leading-7">{worker.bio}</p>
             </div>
@@ -128,11 +163,10 @@ function HireWorker() {
               Hire Worker
             </p>
             <h2 className="text-balance text-3xl font-black text-secondary md:text-4xl">
-              Send a mock job request to {worker.name}.
+              Send a job request to {worker.name}.
             </h2>
             <p className="text-steel">
-              This form validates on the frontend only. No backend request is
-              sent.
+              The worker will be notified and can accept or decline.
             </p>
           </div>
 

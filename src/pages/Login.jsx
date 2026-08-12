@@ -1,15 +1,25 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { Link } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import { apiErrorMessage } from '../services/api'
+import { authService } from '../services/authService'
+import { login as loginAction } from '../store/slices/authSlice'
 
 const loginSchema = z.object({
   email: z.email('Enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(1, 'Enter your password'),
 })
 
 function Login() {
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const queryClient = useQueryClient()
+
   const {
     register,
     handleSubmit,
@@ -23,13 +33,24 @@ function Login() {
     },
   })
 
-  const onSubmit = () => {
-    toast.success('Login form validated')
-    reset()
+  const onSubmit = async (values) => {
+    try {
+      const user = await authService.login(values)
+      dispatch(loginAction(user))
+      // Drop anything cached for the previous session (a guest's empty cart,
+      // for instance) so the new user does not see it.
+      queryClient.clear()
+      reset()
+      toast.success(`Welcome back, ${user.name.split(' ')[0]}`)
+      // Return them to whatever they were trying to reach, if anything.
+      navigate(location.state?.from ?? '/', { replace: true })
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Could not sign you in.'))
+    }
   }
 
   return (
-    <section className="page-container grid w-full items-center gap-10 py-12 lg:grid-cols-[0.9fr_1.1fr]">
+    <main className="page-container grid w-full items-center gap-10 section-spacing lg:grid-cols-[0.9fr_1.1fr]">
       <div className="hidden rounded-panel bg-secondary p-8 text-white shadow-construction lg:grid lg:min-h-[520px] lg:content-between">
         <div className="grid gap-4">
           <span className="w-fit rounded-full bg-primary px-4 py-2 text-sm font-bold text-secondary-900">
@@ -103,7 +124,7 @@ function Login() {
           </Link>
         </p>
       </div>
-    </section>
+    </main>
   )
 }
 
