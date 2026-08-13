@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { FiChevronLeft, FiChevronRight, FiSearch, FiSliders } from 'react-icons/fi'
 import { useSearchParams } from 'react-router-dom'
+import LoadError from '../components/ui/LoadError'
 import ProductCard from '../components/ProductCard'
 import SectionHeader from '../components/SectionHeader'
 import { priceRanges, sortOptions } from '../constants/catalogFilters'
@@ -53,7 +54,7 @@ function Materials() {
 
   const selectedRange = priceRanges.find((range) => range.value === priceRange)
 
-  const { data, isLoading, isFetching, isError, error } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ['products', debouncedTerm, categoryId, priceRange, sortBy, page],
     queryFn: () =>
       productsService.getProducts({
@@ -231,15 +232,12 @@ function Materials() {
             ))}
           </div>
         ) : isError ? (
-          <div className="surface-panel grid gap-3 p-8 text-center">
-            <h2 className="text-2xl font-black text-secondary">
-              Could not load materials
-            </h2>
-            <p className="text-steel">
-              {error?.message ?? 'The marketplace API is unreachable.'} Check that
-              the backend is running on port 8000.
-            </p>
-          </div>
+          <LoadError
+            title="We could not load materials"
+            error={error}
+            onRetry={refetch}
+            isRetrying={isFetching}
+          />
         ) : materials.length > 0 ? (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

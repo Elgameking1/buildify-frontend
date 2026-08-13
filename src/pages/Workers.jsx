@@ -7,6 +7,7 @@ import {
   FiSliders,
   FiUsers,
 } from 'react-icons/fi'
+import LoadError from '../components/ui/LoadError'
 import SectionHeader from '../components/SectionHeader'
 import WorkerCard from '../components/WorkerCard'
 import {
@@ -51,7 +52,7 @@ function Workers() {
     queryFn: workersService.getSkills,
   })
 
-  const { data, isLoading, isFetching, isError, error } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: [
       'workers',
       debouncedTerm,
@@ -292,15 +293,12 @@ function Workers() {
             ))}
           </div>
         ) : isError ? (
-          <div className="surface-panel grid gap-3 p-8 text-center">
-            <h2 className="text-2xl font-black text-secondary">
-              Could not load workers
-            </h2>
-            <p className="text-steel">
-              {error?.message ?? 'The marketplace API is unreachable.'} Check that
-              the backend is running on port 8000.
-            </p>
-          </div>
+          <LoadError
+            title="We could not load workers"
+            error={error}
+            onRetry={refetch}
+            isRetrying={isFetching}
+          />
         ) : workers.length > 0 ? (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
