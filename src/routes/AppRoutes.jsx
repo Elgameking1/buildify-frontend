@@ -18,7 +18,6 @@ import Orders from '../pages/Orders'
 import PaymentCallback from '../pages/PaymentCallback'
 import Profile from '../pages/Profile'
 import Register from '../pages/Register'
-import ResetPassword from '../pages/ResetPassword'
 import VendorDashboard from '../pages/VendorDashboard'
 import WorkerDashboard from '../pages/WorkerDashboard'
 import WorkerDetails from '../pages/WorkerDetails'
@@ -64,9 +63,8 @@ function AppRoutes() {
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           {/* Public by necessity: someone who cannot sign in is exactly
-              who needs these. */}
+              who needs this. Both steps live on the one page. */}
           <Route path="forgot-password" element={<ForgotPassword />} />
-          <Route path="reset-password" element={<ResetPassword />} />
 
           {/* Signed in, any role. */}
           <Route element={<ProtectedRoute />}>

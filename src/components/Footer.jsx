@@ -24,8 +24,8 @@ const columns = [
 
 // Kept in step with the Contact page - one place to change if it ever moves.
 const contactDetails = [
-  { id: 'email', icon: FiMail, text: 'support@buildify.example' },
-  { id: 'phone', icon: FiPhone, text: '+233 30 000 0000' },
+  { id: 'email', icon: FiMail, text: 'amoakolin@gmail.com' },
+  { id: 'phone', icon: FiPhone, text: '+233 591927991' },
   { id: 'address', icon: FiMapPin, text: 'Accra, Ghana' },
 ]
 

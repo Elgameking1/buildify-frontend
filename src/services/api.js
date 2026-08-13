@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { notify } from '../components/ui/toastUtils'
 import { tokenStore } from './tokenStore'
 
 /**
@@ -16,52 +15,14 @@ const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
  * Long enough to survive a cold start.
  *
  * The API is hosted on a free tier that stops the container after 15 minutes
- * of inactivity, and the next request has to wait for it to boot again - 30 to
- * 60 seconds.  The previous 15s timeout aborted every one of those, so the
- * first visitor after a quiet spell simply could not log in.  A generous
- * timeout is the only thing that makes that request survivable.
+ * of inactivity, and the next request waits 30-60 seconds for it to boot. The
+ * original 15s timeout aborted every one of those, so the first visitor after
+ * a quiet spell could not sign in at all.
  *
- * The cost is that a genuinely dead backend now takes a minute to report
- * itself, which is what the notice below is for: it distinguishes "still
- * waiting on purpose" from "nothing is happening", so the wait is legible
- * rather than looking like a hang.
+ * Nothing is shown while that wait happens - pages carry their own loading
+ * state, and a failure explains itself through `apiErrorMessage` below.
  */
 const REQUEST_TIMEOUT_MS = 60000
-const WAKE_NOTICE_AFTER_MS = 8000
-
-let inFlight = 0
-let wakeTimer = null
-let wakeToastId = null
-
-function clearWakeNotice() {
-  if (wakeTimer !== null) {
-    clearTimeout(wakeTimer)
-    wakeTimer = null
-  }
-  if (wakeToastId !== null) {
-    notify.dismiss(wakeToastId)
-    wakeToastId = null
-  }
-}
-
-function requestStarted() {
-  inFlight += 1
-  // One notice for the whole burst, not one per request: a page load fires
-  // several calls at once and they are all waiting on the same cold container.
-  if (wakeTimer === null && wakeToastId === null) {
-    wakeTimer = setTimeout(() => {
-      wakeTimer = null
-      if (inFlight > 0) {
-        wakeToastId = notify.loading('Waking the server up. This can take up to a minute.')
-      }
-    }, WAKE_NOTICE_AFTER_MS)
-  }
-}
-
-function requestSettled() {
-  inFlight = Math.max(0, inFlight - 1)
-  if (inFlight === 0) clearWakeNotice()
-}
 
 export const api = axios.create({
   baseURL,
@@ -72,7 +33,6 @@ export const api = axios.create({
 // --- Request: attach the bearer token ------------------------------------
 
 api.interceptors.request.use((config) => {
-  requestStarted()
   const token = tokenStore.getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -115,14 +75,8 @@ async function refreshAccessToken() {
 }
 
 api.interceptors.response.use(
-  (response) => {
-    requestSettled()
-    return response
-  },
+  (response) => response,
   async (error) => {
-    // Settled before the retry below re-enters the request interceptor, so the
-    // in-flight count stays balanced across a refresh-and-replay.
-    requestSettled()
     const { config, response } = error
 
     if (!response || response.status !== 401 || !config || config._retried) {
