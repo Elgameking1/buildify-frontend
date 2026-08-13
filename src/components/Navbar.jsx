@@ -3,6 +3,7 @@ import { useState } from 'react'
 import {
   FiBell,
   FiClipboard,
+  FiHome,
   FiLogOut,
   FiMenu,
   FiShoppingCart,
@@ -171,15 +172,49 @@ function Navbar() {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="btn-secondary px-3 lg:hidden"
-          aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-          aria-expanded={isMenuOpen}
-          onClick={() => setIsMenuOpen((current) => !current)}
-        >
-          {isMenuOpen ? <FiX aria-hidden="true" /> : <FiMenu aria-hidden="true" />}
-        </button>
+        {/* Home and Cart sit outside the drawer on small screens.
+            They are the two destinations reached most often and the two worth
+            reaching in one tap - a cart in particular should never be two taps
+            and a menu away. They are removed from the drawer below rather than
+            duplicated, so nothing is listed twice. */}
+        <div className="flex items-center gap-1 lg:hidden">
+          <Link
+            to="/"
+            className="grid size-10 place-items-center rounded-control text-secondary transition-colors hover:bg-primary-50"
+            aria-label="Home"
+            onClick={closeMenu}
+          >
+            <FiHome aria-hidden="true" className="size-5" />
+          </Link>
+
+          {showCart ? (
+            <Link
+              to="/cart"
+              className="relative grid size-10 place-items-center rounded-control text-secondary transition-colors hover:bg-primary-50"
+              aria-label={
+                totalQuantity > 0 ? `Cart, ${totalQuantity} items` : 'Cart'
+              }
+              onClick={closeMenu}
+            >
+              <FiShoppingCart aria-hidden="true" className="size-5" />
+              {totalQuantity > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-black text-on-primary">
+                  {totalQuantity > 9 ? '9+' : totalQuantity}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
+
+          <button
+            type="button"
+            className="btn-secondary px-3"
+            aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen((current) => !current)}
+          >
+            {isMenuOpen ? <FiX aria-hidden="true" /> : <FiMenu aria-hidden="true" />}
+          </button>
+        </div>
       </nav>
 
       {isMenuOpen ? (
@@ -191,13 +226,18 @@ function Navbar() {
               </p>
             ) : null}
 
+            {/* Home and Cart are excluded: they now have their own buttons in
+                the bar above, and repeating them here would make the drawer
+                longer while telling the user nothing new. */}
             {[
               ...navigationLinks,
               ...accountLinks,
               ...(isAuthenticated
                 ? [{ label: 'Notifications', to: '/notifications', icon: FiBell }]
                 : []),
-            ].map((link) => {
+            ]
+              .filter((link) => link.to !== '/' && link.to !== '/cart')
+              .map((link) => {
               const Icon = link.icon
 
               return (

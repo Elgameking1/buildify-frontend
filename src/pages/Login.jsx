@@ -45,7 +45,12 @@ function Login() {
       // Return them to whatever they were trying to reach, if anything.
       navigate(location.state?.from ?? '/', { replace: true })
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Could not sign you in.'))
+      // A fixed id, so repeated failed attempts replace the notice instead of
+      // stacking one per tap. Someone mistyping a password three times gets
+      // one message that stays current, not a column of identical toasts.
+      toast.error(apiErrorMessage(error, 'Could not sign you in.'), {
+        id: 'auth-error',
+      })
     }
   }
 
@@ -95,9 +100,20 @@ function Login() {
           </div>
 
           <div className="grid gap-2">
-            <label className="form-label" htmlFor="password">
-              Password
-            </label>
+            <div className="flex items-baseline justify-between gap-3">
+              <label className="form-label" htmlFor="password">
+                Password
+              </label>
+              {/* Beside the field rather than below the button: someone who
+                  needs this has usually already failed to sign in, and this is
+                  where they are looking. */}
+              <Link
+                to="/forgot-password"
+                className="text-sm font-semibold text-accent hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <input
               id="password"
               type="password"

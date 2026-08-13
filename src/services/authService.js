@@ -55,4 +55,23 @@ export const authService = {
   },
 
   isAuthenticated: () => Boolean(tokenStore.getAccessToken()),
+
+  /**
+   * Ask for a password reset link.
+   *
+   * Always resolves the same way whether or not the address is registered -
+   * the backend deliberately does not say, so the form cannot be used to find
+   * out who has an account. `resetToken` is populated only when the server is
+   * configured to hand the link back directly (no mail provider); in a normal
+   * deployment it is null and the link arrives by email.
+   */
+  forgotPassword: async (email) => {
+    const { data } = await api.post('/auth/forgot-password', { email })
+    return { detail: data.detail, resetToken: data.reset_token ?? null }
+  },
+
+  /** Consume a reset token. Every existing session is revoked server-side. */
+  resetPassword: async ({ token, password }) => {
+    await api.post('/auth/reset-password', { token, password })
+  },
 }

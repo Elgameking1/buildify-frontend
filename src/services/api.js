@@ -157,8 +157,26 @@ api.interceptors.response.use(
 
 /** Pull a readable message out of the backend's {detail, code} envelope. */
 export function apiErrorMessage(error, fallback = 'Something went wrong.') {
-  const data = error?.response?.data
-  if (!data) return error?.message ?? fallback
+  // No response at all means the request never reached the API: a timeout, a
+  // dropped connection, or a server still booting. Axios describes those as
+  // "Network Error" or "timeout of 60000ms exceeded", which reads like a bug
+  // in the page rather than a server that is not answering yet - and on a free
+  // tier that sleeps, "not answering yet" is the common case.
+  if (!error?.response) {
+    if (error?.code === 'ECONNABORTED' || /timeout/i.test(error?.message ?? '')) {
+      return 'The server took too long to respond. It may still be starting up - please try again in a moment.'
+    }
+    return 'Cannot reach the server right now. It may be starting up, or your connection dropped - please try again in a moment.'
+  }
+
+  // 502/503/504 from a proxy in front of a cold or crashed container. The body
+  // is the host's HTML error page, not our JSON envelope.
+  if ([502, 503, 504].includes(error.response.status)) {
+    return 'The server is temporarily unavailable - it may be starting up. Please try again in a moment.'
+  }
+
+  const data = error.response.data
+  if (!data) return fallback
   if (typeof data.detail === 'string') return data.detail
   if (Array.isArray(data.errors) && data.errors.length) {
     return data.errors.map((item) => item.message).join(', ')

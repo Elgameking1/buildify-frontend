@@ -54,7 +54,10 @@ function Register() {
       toast.success(`Account created. Welcome, ${user.name.split(' ')[0]}`)
       navigate('/', { replace: true })
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Could not create your account.'))
+      // Fixed id: repeated attempts replace the notice rather than stacking.
+      toast.error(apiErrorMessage(error, 'Could not create your account.'), {
+        id: 'auth-error',
+      })
     }
   }
 
